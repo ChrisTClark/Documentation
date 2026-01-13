@@ -1,0 +1,111 @@
+Nice — now you’ve proven the pipeline works end-to-end. Next step is making it **use your IR-PAI outputs automatically** so every time you “compile,” the site refreshes.
+
+## What we’re doing next
+
+1. Create a **publish step** that copies your IR-PAI markdown outputs into `docs/`
+2. Run `mkdocs build` to regenerate `site/`
+3. (Optional but smart) stamp a build timestamp + incident ID on the homepage
+
+---
+
+## Step 1 — Create a `publish_site.ps1` script at repo root
+
+In PowerShell (repo root):
+
+```powershell
+New-Item -ItemType File -Path .\publish_site.ps1 -Force
+notepad .\publish_site.ps1
+```
+
+Paste this **template** (edit the paths in Step 2):
+
+```powershell
+# publish_site.ps1
+$ErrorActionPreference = "Stop"
+
+# --- CONFIG: set this to wherever your IR-PAI compile writes the final md files ---
+# Examples: .\out\INC1234\  OR  .\incident_packs\current\
+$SRC = ".\incident_pack"
+
+# --- DEST: MkDocs source folder ---
+$DST = ".\docs"
+
+if (-not (Test-Path $SRC)) { throw "Source folder not found: $SRC" }
+if (-not (Test-Path $DST)) { New-Item -ItemType Directory -Path $DST -Force | Out-Null }
+
+# Copy core pages (adjust filenames to match your incident pack)
+Copy-Item "$SRC\sitrep.md"    "$DST\sitrep.md"    -Force
+Copy-Item "$SRC\timeline.md"  "$DST\timeline.md"  -Force
+Copy-Item "$SRC\decisions.md" "$DST\decisions.md" -Force
+Copy-Item "$SRC\evidence.md"  "$DST\evidence.md"  -Force
+
+# Build a simple landing page with a timestamp
+$stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+Set-Content "$DST\index.md" @"
+# Incident Report
+
+**Last generated:** $stamp
+
+## Sections
+- [SitRep](sitrep.md)
+- [Timeline](timeline.md)
+- [Decisions](decisions.md)
+- [Evidence](evidence.md)
+"@
+
+# Build the static site using the venv python (works even if Activate is blocked)
+.\.venv\Scripts\python.exe -m mkdocs build
+
+Write-Host "OK: Built site. Open .\site\index.html"
+```
+
+Save and close.
+
+---
+
+## Step 2 — Point `$SRC` at your real IR-PAI output folder
+
+Right now it’s set to `.\incident_pack`. Change that line to match your actual compiled output directory.
+
+To discover it quickly, run:
+
+```powershell
+ls
+```
+
+and look for the folder your IR-PAI compile creates/updates (often `out`, `build`, `incident_packs`, etc.). Use that path.
+
+---
+
+## Step 3 — Run the publish step
+
+```powershell
+.\publish_site.ps1
+Start-Process .\site\index.html
+```
+
+If it works, you’ve now got: **IR-PAI Markdown → Website** as a repeatable artifact.
+
+---
+
+## Step 4 — Wire it into your existing compile command
+
+Whatever you currently run to compile, you’ll add one line at the end:
+
+```powershell
+.\publish_site.ps1
+```
+
+So the workflow becomes:
+
+* edit md/json → compile → publish_site → open site
+
+---
+
+## Fast hardening upgrades (worth doing next)
+
+* Add an **Incident ID** pulled from `intake.json` (if you have it)
+* Create a **build artifact folder** like `.\exports\INC1234\YYYYMMDD-HHMM\site\` for auditability
+* Add a banner on every page: “CONFIDENTIAL – INCIDENT MATERIAL”
+
+If you tell me the **exact folder name** where your IR-PAI compile output lives *and* the filenames it produces (or paste `ls` output of that folder), I’ll tailor `publish_site.ps1` to your repo so it’s drop-in and resilient (handles missing pages, creates placeholders, etc.).
