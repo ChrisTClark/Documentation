@@ -1,3 +1,20 @@
+# Set base path to your active incidents directory
+$basePath = "C:\Users\myname\Documents\Ares\ir-pai-main\incidents\active"
+
+# Find the most recently modified incident folder
+$latestIncident = Get-ChildItem -Path $basePath -Directory |
+                  Sort-Object LastWriteTime -Descending |
+                  Select-Object -First 1
+
+# If no incident folder is found, throw an error
+if (-not $latestIncident) {
+    throw "No incident folders found in $basePath"
+}
+
+# Set $SRC to the path of the latest incident folder
+$SRC = Join-Path -Path $basePath -ChildPath $latestIncident.Name
+
+
 Nice — now you’ve proven the pipeline works end-to-end. Next step is making it **use your IR-PAI outputs automatically** so every time you “compile,” the site refreshes.
 
 ## What we’re doing next
