@@ -1,0 +1,173 @@
+Roles and Responsibilities
+Incident Response Team Roles & Responsibilities
+The purpose of defining these roles and responsibilities is to support effective execution of incident response, at the Cyber Defense level.  
+This is for handling category 5-8 with medium or higher impact, such as ransomware, malware propagation, cloud compromise, data exfiltration, etc. Activation of the Cyber Defense incident response playbook. 
+Importance of roles and responsibilities
+•	Reduce confusion and speed response: eliminate hesitation and duplication of effort. 
+•	Enable effective collaboration: common understanding improving communication and reducing friction
+•	Drive predictability: reduce uncertainty and increase confidence during crises
+•	Empower teams with clear ownership: improves efficiency
+•	Support continuous improvement: establishes baseline for identifying gaps and driving ongoing improvements
+Cyber Incident Coordinator
+Role:
+•	Overall coordination of Cyber Defense incident response for category 5-8, medium impact or higher incidents for Cyber Defense, including relevant specialists as needed. 
+•	Ensures alignment between CTR, Cyber Threat Management, Vulnerability Management, Application & Cloud Security, and Web Application Firewall (WAF) Team.
+•	Coordinates with ESS/CIS leadership for declaration of incidents, as well as disconnect and reconnect decisions. 
+•	Coordinates with incident response retainer services when applicable. 
+•	Elevates to critical incident (Corporate Incident Response) when necessary.
+•	Provides updates to ESS/CIS/Cyber Defense leadership.
+•	For Category 5-8, medium impact or higher incidents, leads the Cyber Defense Team’s post-incident review and handover of any improvements to appropriate CIS teams, typically through the CIS Working Group.  
+Key Actions:
+•	Activate and coordinate the Cyber Defense response category 5-8 incidents. 
+•	Ensure rapid containment, eradication, and recovery strategies.
+•	Communicate incident status to leadership. 
+•	Lead post-incident analysis to prevent recurrence.
+Cyber Threat Response (CTR)
+Role:
+•	First responders to detect, analyze, and contain threats.
+•	Monitor security tools and logs for signs of malicious activity.
+•	Work closely with threat intelligence, forensics, and incident response to provide real-time data.
+•	Phishing analysis and remediation.
+•	Email security analysis and remediation. 
+Key Actions:
+•	Monitor alerts and correlate logs from the SIEM, CSPM, WAF, and firewall solutions.
+•	Identify and escalate incidents based on category and impact.
+•	Perform initial containment actions (e.g., isolating endpoints, blocking IOCs).
+•	Work with forensics to validate indicators of compromise (IOCs).
+•	Investigate phishing campaigns targeting employees or customers.
+•	Coordinate phishing takedown efforts with external partners and threat intelligence.
+•	Analyze Proofpoint logs to identify email-based threats, BEC attempts, and phishing trends.
+•	Implement email filtering rules and DMARC. 
+•	Provide continuous monitoring for signs of ongoing compromise.
+Forensics & Digital Investigations
+Role:
+•	Collect, analyze, and preserve digital evidence.
+•	Determine attack vector, timeline, and adversary techniques.
+•	Support containment and eradication by identifying persistence mechanisms.
+Key Actions:
+•	Capture and analyze forensic images (memory, disk, logs).
+•	Conduct root cause analysis, in coordination with other teams, to determine how the attack occurred.
+•	Identify malware, backdoors, and compromised credentials.
+•	Support threat intelligence with indicators and attribution efforts.
+•	Validate eradication efforts, in coordination with other teams, to confirm no remaining threat actors.
+•	Preserve evidence for legal and compliance purposes.
+Cyber Threat Intelligence (CTI) & Threat Hunting
+Role:
+•	Provide intelligence-driven response to anticipate adversary moves.
+•	Identify threat actor tactics, techniques, and procedures (TTPs).
+•	Enhance MITRE ATT&CK mapping, IOCs, and detection rules.
+Key Actions:
+•	Attempt to identify threat actor(s) behind the attack
+•	Provide IOC and TTP intelligence to CTR, Forensics, and IR Lead.
+•	Attempt to predict adversary next steps to inform containment strategies.
+•	Monitor dark web, FS-ISAC, and other external intelligence feeds.
+•	Conduct proactive threat hunts to detect hidden compromises.
+•	Analyze web proxy logs for signs of malicious web activity, C2 communications, or phishing attempts. Note this is likely a team effort spanning other teams. 
+•	Enforce web traffic security policies and block access to malicious sites. The CTR, CTI, or Threat Hunting can provide block requests to the proxy team. 
+Threat Hunting-Specific Actions
+•	Perform continuous hypothesis-driven hunts based on TTPs.
+•	Use log data, behavioral analytics, and threat intelligence to uncover hidden attacks.
+•	Search for evidence of persistence, lateral movement, and C2 communication.
+•	Assist CTR in identifying stealthy malware, unauthorized access, and insider threats.
+•	Work with forensics to validate findings and ensure full attack eradication.
+Cyber Adversary & Exposure Management (CAEM)
+Role:
+•	Research exploited vulnerabilities and recommend remediation strategy.
+•	Track and manage remediation actions (patching, configuration changes).
+Key Actions:
+•	Identify exploited vulnerabilities and work with security teams for remediation.
+•	Prioritize patching based on threat intelligence and exploitability.
+•	 Ensure compensating controls are in place when patches are unavailable.
+•	Conduct vulnerability scans post-incident to confirm remediation effectiveness.
+Cyber Application & Cloud Defense
+Role:
+•	Ensure security of web applications, APIs, and cloud environments during an incident. 
+•	Provide input to recovery compromised cloud assets with Technology Incident Management. 
+Key Actions:
+•	Identify vulnerabilities in cloud environments and applications.
+•	Work with CTR and forensics to isolate compromised cloud workloads.
+•	Analyze logs from cloud platforms (GCP, Azure, AWS) for signs of lateral movement.
+•	Secure and revalidate access controls, IAM, and network segmentation.
+•	Enforce API security measures and prevent unauthorized access.
+Enterprise Support Functions for Cyber Defense Incident Response
+The below list is representative of functions typically engaged during incident response; it is not exhaustive. 
+•	Corporate Incident Response (CIR) & Technology Incident Management (TIM)
+o	Role: Lead enterprise-wide coordination for high-impact incidents, including those with operational, regulatory, or reputational consequences. CIR works closely with TIM to manage technology disruptions and ensure business continuity.
+o	Key Actions
+	Oversee critical incidents and manage escalation.
+	Coordinate cross-functional response and recovery.
+	Interface with executive leadership, legal, and regulators.
+	Oversee incident communications and stakeholder engagement.
+•	Cloud Network Services (CNS) Team
+o	Role: Ensure the security and resilience of Key’s cloud-based network infrastructure across platforms like GCP and Azure. 
+o	Key Actions
+	Monitor cloud network traffic for anomalies and unauthorized access.
+	Enforce segmentation and access controls.
+	Support containment by isolating affected cloud workloads.
+	Assist in recovery and validation of cloud services post-incident.
+•	Windows Server Management (WSM) Team
+o	Role: Maintain and secure Windows server environments, including patching, configuration, and access control.
+o	Key Actions
+	Validate server integrity and patch status during incidents.
+	Support forensic imaging and reimaging of compromised servers.
+	Assist in containment by disabling affected services or accounts.
+	Coordinate with CIR for recovery planning.
+•	End User Team (EUT) – Microsoft 365 Applications
+o	Role: Manage and secure end-user platforms including Outlook, Teams, SharePoint, and OneDrive.
+o	Key Actions
+	Support investigation of M365 applications.
+	Support containment by disabling compromised accounts.
+	Assist in restoring user access and validating MFA configurations.
+•	Security Architecture & Engineering
+o	Role: Design, validate, and enhance security controls across Key’s infrastructure. Post-incident, this team ensures that architectural weaknesses are addressed and that new controls are implemented to prevent recurrence.
+o	Key Actions
+	Conduct post-incident control gap analysis.
+	Redesign or reinforce security architecture based on lessons learned.
+	Validate effectiveness of compensating controls and zero trust configurations.
+•	Web Application Firewall (WAF) Team (component of Security Architecture & Engineering) 
+o	Role: Monitor and manage WAF policies to detect and block malicious web traffic targeting Key’s applications.
+o	Key Actions
+	Analyze WAF logs for attack patterns and anomalies.
+	Implement and tune WAF rulesets based on threat intelligence.
+	Collaborate with CTR and CTI to block adversary infrastructure.
+	Support containment and eradication by restricting malicious traffic.
+•	Fraud & Corporate Investigations
+o	Role: Lead investigative efforts for incidents involving fraud, legal exposure, or regulatory violations. This team coordinates with law enforcement and internal legal counsel.
+o	Key Actions
+	Conduct forensic interviews and evidence collection.
+	Interface with law enforcement and regulatory bodies.
+	Support CIR in legal and compliance communications.
+•	Third Party Security (TPS)
+o	Role: Manage security risks associated with vendors, partners, and supply chain entities. TPS is essential during incidents involving external parties with access to Key’s systems or data.
+o	Key Actions
+	Assess exposure and connectivity with impacted third parties.
+	Coordinate third party containment and mitigation actions
+•	Data Loss Prevention (DLP)
+o	Role: Monitor and control the movement of sensitive data across Key’s environment to prevent unauthorized disclosure, exfiltration, or misuse.
+o	Key Actions
+	Analyze data transfer logs and DLP alerts for signs of policy violations.
+	Investigate potential data leakage incidents and coordinate with CTR and CTI.
+	Recommend and implement DLP policy updates based on incident findings.
+•	Insider Risk
+o	Role: Identify, assess, and respond to threats originating from within the organization, including intentional or accidental misuse of access or data.
+o	Key Actions
+	Investigate anomalous user behavior and access patterns.
+	Coordinate with Corporate Investigations for high-risk cases.
+	Recommend access revocation or privilege adjustments.
+	Support post-incident reviews to identify gaps in insider threat detection.
+External Entities
+•	External Legal Counsel
+o	Role: Provide specialized legal guidance during high-impact or sensitive cybersecurity incidents. External counsel is engaged to advise on regulatory obligations, litigation risk, and communications strategy.
+o	Key Actions
+	Advise on legal exposure and regulatory reporting requirements.
+	Review incident communications and public disclosures.
+	Coordinate with internal legal and Corporate Investigations.
+	Support decision-making on law enforcement engagement and litigation posture.
+•	Incident Response Retainer Service
+o	Role: Offer expert-level support for incident investigation, containment, and recovery. The retainer service is activated for complex or high-severity incidents requiring specialized forensics or threat intelligence.
+o	Key Actions
+	Assist with triage and initial scoping of incidents.
+	Analyze logs, IOCs, and adversary behavior.
+	Provide forensic support and threat actor attribution.
+	Collaborate with Cyber Defense and CIR on containment and eradication strategies.
+	Ensure SLA adherence and coordinate with internal legal before conducting forensic activities.
