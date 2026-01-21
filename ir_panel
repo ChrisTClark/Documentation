@@ -1,0 +1,185 @@
+
+
+## 0) Your 30-second opening (set your lane)
+
+**Frame:** “I sit at the intersection of technical response and executive decision-making.”
+
+* “My job is to drive shared understanding fast: what’s true, what’s likely, and what we’re doing next.”
+* “Early in incidents, certainty is low — so we optimize for *containment advantage and decision optionality*.”
+* “We try to prevent technical incidents from becoming business crises.”
+
+---
+
+## 1) When does an incident become a crisis — what’s the turning point?
+
+**Simple definition:** An incident becomes a crisis when **business consequences outrun technical control**.
+
+Talking points:
+
+* **External impact changes everything**: customer harm, public exposure, regulator attention.
+* **Data exposure / integrity loss** is often the “point of no return” for comms + legal.
+* **Narrative control**: if others define the story first (media, social, threat actor), it becomes crisis management.
+* **Leadership inbound pressure**: “When executives start getting calls” is a real threshold.
+* **Operational disruption**: when containment requires “turning off revenue,” you’re now in crisis governance.
+
+Good line:
+
+* “A crisis is when *the decision-making becomes the primary workstream*.”
+
+---
+
+## 2) Most important focus areas to improve (people / process / tech) — what comes first?
+
+**Answer structure:** “People, then process, then tech — but tech amplifies everything.”
+
+Talking points:
+
+* **People:** clear roles, practiced decision authority, and calm leadership under ambiguity.
+* **Process:** repeatable incident rhythm:
+
+  * 30-min alignment
+  * 2-hour action plan
+  * SITREP cadence
+  * decision log
+* **Tech:** visibility + speed (EDR, identity telemetry, email security, web logs, cloud logs).
+* Biggest improvement lever: **decision quality under uncertainty**, not “perfect forensics.”
+
+Good line:
+
+* “Tools don’t solve coordination. They only speed up the truth if you’re organized enough to ask the right questions.”
+
+---
+
+## 3) Highest-friction decisions (containment, disclosure, regulators, law enforcement, ransom) — drivers + resolving deadlocks
+
+This is the heart of your value.
+
+### The friction drivers
+
+* **Business interruption vs security risk**
+* **Irreversible actions** (disable accounts, block VPNs, isolate servers, take apps down)
+* **Unclear blast radius** early on
+* **Legal/regulatory uncertainty**
+* **Competing priorities** (restore fast vs restore clean)
+
+### How to resolve deadlocks fast
+
+* Establish **decision owner** (not 12-person consensus).
+* Use a **“smallest irreversible action”** approach:
+
+  * Start with targeted containment on confirmed assets
+  * Expand only when evidence triggers it
+* Create a **time-box**: “We decide in 20 minutes with current info.”
+* Use pre-agreed triggers:
+
+  * confirmed lateral movement
+  * privileged access
+  * exfil indicators
+  * customer impact
+
+Good line:
+
+* “We don’t wait for certainty — we wait for *enough signal to justify an irreversible move*.”
+
+---
+
+## 4) Handoff to restoration: defining and governing “clean to restore”
+
+**Core idea:** “Clean” is a *risk decision*, not a feeling.
+
+Talking points:
+
+* “Clean to restore means we believe the adversary no longer has **persistence, privilege, or active control**.”
+* Minimum evidence before restoring:
+
+  * known initial access vector addressed
+  * compromised creds rotated / tokens revoked
+  * persistence mechanisms removed (scheduled tasks, services, OAuth apps, GPO abuse, etc.)
+  * EDR clean scans + hunting queries show no active beaconing
+  * logging intact and monitored
+* **Who signs off?**
+
+  * IR lead + system owner + risk/leadership (depending on severity)
+* Prevent reinfection:
+
+  * staged restore
+  * heightened monitoring
+  * canary accounts / detections
+  * segmented reintroduction of connectivity
+
+Good line:
+
+* “Restore isn’t the finish line — it’s the start of the next risk window.”
+
+---
+
+## 5) Prioritizing recovery: sequencing when multiple critical services are down
+
+**Frame it as business dependency + threat reality.**
+
+Talking points:
+
+* Start with **life safety + customer-facing stability**
+* Restore in layers:
+
+  1. identity/auth (AD/SSO) stability
+  2. network core services (DNS/DHCP)
+  3. critical business apps
+  4. long-tail internal systems
+* Use a decision lens:
+
+  * **business criticality**
+  * **downstream dependencies**
+  * **data integrity risk**
+  * **time to restore**
+  * **security confidence**
+* Balance speed vs risk:
+
+  * “Fast restore” can create a second outage if you restore compromised data.
+  * “Slow restore” can destroy customer trust and revenue.
+
+Good line:
+
+* “Recovery is a portfolio decision — not a ticket queue.”
+
+---
+
+## 6) Next-step improvements: one investment in 12 months (people/process/tech) + how to measure it worked
+
+Pick one that sounds credible and differentiated.
+
+### Best single investment (my recommendation)
+
+**A formal incident decision system + exercise program**:
+
+* decision log discipline
+* restoration criteria
+* containment authority model
+* third-party disconnect/reconnect protocol
+* quarterly tabletops + 1 live technical drill
+
+### How you measure success
+
+* Time to first containment action (TTFC)
+* Time to executive SITREP v0 (TT-SITREP)
+* Time to scoped blast radius hypothesis (TT-scope)
+* Reduction in “decision churn” (same debate repeated)
+* Fewer surprise stakeholders pulled in late
+
+Good line:
+
+* “Success isn’t ‘no incidents.’ Success is *fewer bad minutes per incident*.”
+
+---
+
+## Optional: smart questions to ask Eaton + Inversion6 (makes you look sharp)
+
+* “What’s your turning point where you shift from IR to crisis governance?”
+* “What’s your minimum ‘clean to restore’ checklist?”
+* “How do you prevent restoring into reinfection?”
+* “What decision do you wish you had pre-authorized before your last major incident?”
+
+---
+
+If you want, I’ll convert this into a **1-page panel cheat sheet** you can print:
+**Question → 3 bullet answers → one killer line → one example story prompt**.
