@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IR-ASSIST v2.0 — AI-Augmented Incident Response Coordination</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #06090f;
+  --surface: #0c1119;
+  --surface2: #111923;
+  --border: #1c2a3a;
+  --border-bright: #2a3f55;
+  --text: #c8d6e5;
+  --text-dim: #5a7089;
+  --text-bright: #e8f0f8;
+  --accent-audit: #f72585;
+  --accent-state: #4cc9f0;
+  --accent-output: #7b61ff;
+  --accent-gemini: #fca311;
+  --accent-green: #06d6a0;
+  --accent-red: #ef476f;
+  --glow-audit: rgba(247, 37, 133, 0.15);
+  --glow-state: rgba(76, 201, 240, 0.15);
+  --glow-output: rgba(123, 97, 255, 0.15);
+  --glow-gemini: rgba(252, 163, 17, 0.15);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ── Background texture ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(247,37,133,0.04), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 70%, rgba(76,201,240,0.03), transparent),
+    radial-gradient(ellipse 50% 50% at 50% 50%, rgba(123,97,255,0.02), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Header ── */
+.header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+.header .tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7em;
+  font-weight: 500;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent-audit);
+  border: 1px solid rgba(247,37,133,0.3);
+  padding: 6px 18px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+  background: rgba(247,37,133,0.05);
+}
+.header h1 {
+  font-size: 2.4em;
+  font-weight: 700;
+  color: var(--text-bright);
+  letter-spacing: -0.5px;
+  margin-bottom: 10px;
+}
+.header .subtitle {
+  font-size: 1.05em;
+  color: var(--text-dim);
+  font-weight: 400;
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ── Legend ── */
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  margin-bottom: 48px;
+  flex-wrap: wrap;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82em;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.legend-dot.audit { background: var(--accent-audit); box-shadow: 0 0 8px var(--glow-audit); }
+.legend-dot.state { background: var(--accent-state); box-shadow: 0 0 8px var(--glow-state); }
+.legend-dot.output { background: var(--accent-output); box-shadow: 0 0 8px var(--glow-output); }
+.legend-dot.gemini { background: var(--accent-gemini); box-shadow: 0 0 8px var(--glow-gemini); }
+
+/* ── Section titles ── */
+.section-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-title .line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Architecture Grid ── */
+.arch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 48px;
+}
+@media (max-width: 900px) { .arch-grid { grid-template-columns: 1fr; } }
+
+.arch-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.arch-card:hover {
+  transform: translateY(-2px);
+}
+.arch-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+.arch-card.audit-card { border-color: rgba(247,37,133,0.2); }
+.arch-card.audit-card:hover { border-color: rgba(247,37,133,0.5); }
+.arch-card.audit-card::before { background: linear-gradient(90deg, var(--accent-audit), transparent); }
+.arch-card.state-card { border-color: rgba(76,201,240,0.2); }
+.arch-card.state-card:hover { border-color: rgba(76,201,240,0.5); }
+.arch-card.state-card::before { background: linear-gradient(90deg, var(--accent-state), transparent); }
+.arch-card.output-card { border-color: rgba(123,97,255,0.2); }
+.arch-card.output-card:hover { border-color: rgba(123,97,255,0.5); }
+.arch-card.output-card::before { background: linear-gradient(90deg, var(--accent-output), transparent); }
+
+.arch-card .card-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65em;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.audit-card .card-label { color: var(--accent-audit); }
+.state-card .card-label { color: var(--accent-state); }
+.output-card .card-label { color: var(--accent-output); }
+
+.arch-card h3 {
+  font-size: 1.15em;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 8px;
+}
+.arch-card p {
+  font-size: 0.88em;
+  color: var(--text-dim);
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+.arch-card .properties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.prop-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68em;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+.audit-card .prop-tag { background: rgba(247,37,133,0.1); color: var(--accent-audit); border: 1px solid rgba(247,37,133,0.2); }
+.state-card .prop-tag { background: rgba(76,201,240,0.1); color: var(--accent-state); border: 1px solid rgba(76,201,240,0.2); }
+.output-card .prop-tag { background: rgba(123,97,255,0.1); color: var(--accent-output); border: 1px solid rgba(123,97,255,0.2); }
+
+/* ── Flow Diagram (SVG) ── */
+.flow-section {
+  margin-bottom: 48px;
+}
+.flow-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  overflow-x: auto;
+}
+.flow-container svg {
+  width: 100%;
+  height: auto;
+  min-width: 800px;
+}
+
+/* ── File Tree ── */
+.tree-section {
+  margin-bottom: 48px;
+}
+.tree-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 900px) { .tree-grid { grid-template-columns: 1fr; } }
+
+.tree-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+.tree-panel h4 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78em;
+  font-weight: 600;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tree-panel.audit-panel h4 { color: var(--accent-audit); }
+.tree-panel.state-panel h4 { color: var(--accent-state); }
+.tree-panel.output-panel h4 { color: var(--accent-output); }
+.tree-panel.gemini-panel h4 { color: var(--accent-gemini); }
+
+.tree-item {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78em;
+  padding: 5px 0;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(28,42,58,0.5);
+}
+.tree-item:last-child { border-bottom: none; }
+.tree-item .icon { font-size: 0.9em; width: 18px; text-align: center; }
+.tree-item .fname { color: var(--text); }
+.tree-item .desc { color: var(--text-dim); font-size: 0.9em; margin-left: auto; }
+
+/* ── Data Flow Arrows ── */
+.flow-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 0;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75em;
+  font-weight: 500;
+}
+.flow-arrow .arrow-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.flow-arrow svg { width: 40px; }
+
+/* ── Principles ── */
+.principles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 48px;
+}
+.principle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.principle .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7em;
+  font-weight: 700;
+  color: var(--accent-green);
+  margin-bottom: 6px;
+}
+.principle h4 {
+  font-size: 0.95em;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 6px;
+}
+.principle p {
+  font-size: 0.82em;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* ── Animated pulse on audit elements ── */
+@keyframes auditPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.pulse-audit {
+  animation: auditPulse 3s ease-in-out infinite;
+}
+
+/* ── SVG styles ── */
+.node-box {
+  rx: 8;
+  ry: 8;
+}
+.node-text {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  fill: #e8f0f8;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.node-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 400;
+  font-size: 10px;
+  fill: #5a7089;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.flow-path {
+  fill: none;
+  stroke-width: 2;
+  stroke-dasharray: 8 4;
+  animation: flowDash 1.5s linear infinite;
+}
+@keyframes flowDash {
+  to { stroke-dashoffset: -24; }
+}
+.flow-path-solid {
+  fill: none;
+  stroke-width: 2;
+}
+.flow-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 500;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.zone-rect {
+  rx: 12;
+  ry: 12;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 3;
+}
+.zone-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-anchor: start;
+  dominant-baseline: central;
+}
+
+/* ── Air gap visualization ── */
+.airgap-line {
+  stroke: var(--accent-gemini);
+  stroke-width: 2;
+  stroke-dasharray: 12 6;
+  opacity: 0.4;
+}
+.airgap-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--accent-gemini);
+  text-anchor: middle;
+  letter-spacing: 2px;
+  opacity: 0.7;
+}
+
+/* ── Pitch Section ── */
+.pitch-section {
+  margin-bottom: 56px;
+}
+.pitch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 900px) { .pitch-grid { grid-template-columns: 1fr; } }
+.pitch-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px 24px;
+  position: relative;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.pitch-card:hover { transform: translateY(-2px); }
+.pitch-icon {
+  font-size: 1.6em;
+  margin-bottom: 12px;
+}
+.pitch-card h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 10px;
+}
+.pitch-card p {
+  font-size: 0.88em;
+  color: var(--text-dim);
+  line-height: 1.65;
+}
+.pitch-card p strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.pitch-problem { border-color: rgba(239,71,111,0.25); }
+.pitch-problem:hover { border-color: rgba(239,71,111,0.5); }
+.pitch-solution { border-color: rgba(6,214,160,0.25); }
+.pitch-solution:hover { border-color: rgba(6,214,160,0.5); }
+.pitch-difference { border-color: rgba(76,201,240,0.25); }
+.pitch-difference:hover { border-color: rgba(76,201,240,0.5); }
+
+/* ── Workflow Section ── */
+.workflow-section {
+  margin-bottom: 48px;
+}
+.workflow-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  overflow-x: auto;
+}
+.workflow-container svg {
+  width: 100%;
+  height: auto;
+  min-width: 800px;
+}
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  padding: 32px 0;
+  color: var(--text-dim);
+  font-size: 0.78em;
+  font-family: 'JetBrains Mono', monospace;
+  border-top: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- Header -->
+<div class="header">
+  <div class="tag">System Architecture</div>
+  <h1>IR-ASSIST v2.0</h1>
+  <p class="subtitle">AI-augmented incident response coordination — built for situations too fast for humans alone, too consequential for full automation.</p>
+</div>
+
+<!-- Pitch Section -->
+<div class="pitch-section">
+  <div class="pitch-grid">
+    <div class="pitch-card pitch-problem">
+      <div class="pitch-icon">⚡</div>
+      <h3>The Problem</h3>
+      <p>During a cyber incident, responders juggle timelines, indicators, decisions, and stakeholder updates across tools that weren't built for speed or accountability. Critical details get lost. Audit trails are reconstructed after the fact. AI tools that could help are either too disconnected or too autonomous for high-stakes decisions.</p>
+    </div>
+    <div class="pitch-card pitch-solution">
+      <div class="pitch-icon">🎯</div>
+      <h3>What IR-ASSIST Does</h3>
+      <p>IR-ASSIST is a <strong>governance layer</strong> that sits above your existing tools. It provides a single, tamper-evident record of every event, decision, and action during an incident — then uses AI to accelerate analysis while keeping humans in control of every decision that matters. Think of it as a flight recorder that also helps you fly the plane.</p>
+    </div>
+    <div class="pitch-card pitch-difference">
+      <div class="pitch-icon">🛡️</div>
+      <h3>Why It's Different</h3>
+      <p>Most tools force a choice: speed or accountability. IR-ASSIST gives you both. Every AI recommendation passes through a <strong>human-reviewed gate</strong> before it becomes part of the record. The entire incident history can be independently verified at any time. No black boxes. No hidden state.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Incident Workflow -->
+<div class="section-title"><span class="line"></span>WHAT HAPPENS WHEN AN INCIDENT OCCURS<span class="line"></span></div>
+<div class="workflow-section">
+  <div class="workflow-container">
+    <svg viewBox="0 0 1100 340" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="wf-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="none" stroke="#06d6a0" stroke-width="1.5"/>
+        </marker>
+        <marker id="wf-arrow-gold" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="none" stroke="#fca311" stroke-width="1.5"/>
+        </marker>
+        <marker id="wf-arrow-pink" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="none" stroke="#f72585" stroke-width="1.5"/>
+        </marker>
+      </defs>
+
+      <!-- Step 1: Incident Detected -->
+      <rect x="20" y="50" width="160" height="80" rx="10" fill="#1a0f0f" stroke="#ef476f" stroke-width="2"/>
+      <text x="100" y="76" text-anchor="middle" font-family="DM Sans" font-size="13" font-weight="600" fill="#ef476f">🚨 Incident Detected</text>
+      <text x="100" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#5a7089">Alert fires, analyst</text>
+      <text x="100" y="110" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#5a7089">opens IR-ASSIST</text>
+
+      <!-- Arrow 1→2 -->
+      <path d="M180,90 L215,90" fill="none" stroke="#06d6a0" stroke-width="2" marker-end="url(#wf-arrow)"/>
+
+      <!-- Step 2: Log Everything -->
+      <rect x="220" y="50" width="160" height="80" rx="10" fill="#1a0a14" stroke="#f72585" stroke-width="2"/>
+      <text x="300" y="76" text-anchor="middle" font-family="DM Sans" font-size="13" font-weight="600" fill="#f72585">📝 Log Everything</text>
+      <text x="300" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#5a7089">Events, IOCs, decisions</text>
+      <text x="300" y="110" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#5a7089">recorded in real-time</text>
+
+      <!-- Arrow 2→3 -->
+      <path d="M380,90 L415,90" fill="none" stroke="#06d6a0" stroke-width="2" marker-end="url(#wf-arrow)"/>
+
+      <!-- Step 3: State Updates -->
+      <rect x="420" y="50" width="160" height="80" rx="10" fill="#0a151e" stroke="#4cc9f0" stroke-width="2"/>
+      <text x="500" y="76" text-anchor="middle" font-family="DM Sans" font-size="13" font-weight="600" fill="#4cc9f0">🔄 State Rebuilds</text>
+      <text x="500" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#5a7089">Current picture auto-</text>
+      <text x="500" y="110" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#5a7089">computed from the log</text>
+
+      <!-- Arrow 3→4 -->
+      <path d="M580,90 L615,90" fill="none" stroke="#06d6a0" stroke-width="2" marker-end="url(#wf-arrow)"/>
+
+      <!-- Step 4: Dashboards Generated -->
+      <rect x="620" y="50" width="160" height="80" rx="10" fill="#100e1e" stroke="#7b61ff" stroke-width="2"/>
+      <text x="700" y="76" text-anchor="middle" font-family="DM Sans" font-size="13" font-weight="600" fill="#7b61ff">📊 Share &amp; Brief</text>
+      <text x="700" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#5a7089">Dashboards, diagrams</text>
+      <text x="700" y="110" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#5a7089">generated for stakeholders</text>
+
+      <!-- Arrow 4→5 -->
+      <path d="M780,90 L815,90" fill="none" stroke="#06d6a0" stroke-width="2" marker-end="url(#wf-arrow)"/>
+
+      <!-- Step 5: AI Advisory -->
+      <rect x="820" y="50" width="160" height="80" rx="10" fill="#1e1800" stroke="#fca311" stroke-width="2"/>
+      <text x="900" y="76" text-anchor="middle" font-family="DM Sans" font-size="13" font-weight="600" fill="#fca311">🤖 AI Analysis</text>
+      <text x="900" y="96" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#5a7089">LLM reviews state,</text>
+      <text x="900" y="110" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#5a7089">suggests next actions</text>
+
+      <!-- Feedback loop: AI → Human Review → Back to Log -->
+      <path d="M900,130 L900,200" fill="none" stroke="#fca311" stroke-width="2" marker-end="url(#wf-arrow-gold)"/>
+
+      <!-- Human Review Gate -->
+      <rect x="820" y="205" width="160" height="70" rx="10" fill="rgba(252,163,17,0.08)" stroke="#fca311" stroke-width="2" stroke-dasharray="6 3"/>
+      <text x="900" y="230" text-anchor="middle" font-family="DM Sans" font-size="13" font-weight="700" fill="#fca311">👤 Human Reviews</text>
+      <text x="900" y="250" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#5a7089">Analyst approves or</text>
+      <text x="900" y="264" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#5a7089">rejects AI suggestions</text>
+
+      <!-- Arrow: Human Review → Back to Log -->
+      <path d="M820,240 Q 560,310 300,135" fill="none" stroke="#06d6a0" stroke-width="2" stroke-dasharray="8 4" marker-end="url(#wf-arrow)"/>
+      <text x="520" y="295" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#06d6a0" font-weight="500">approved insights → appended to audit log</text>
+
+      <!-- Continuous loop label -->
+      <rect x="375" y="170" width="250" height="28" rx="6" fill="rgba(6,214,160,0.06)" stroke="rgba(6,214,160,0.2)" stroke-width="1"/>
+      <text x="500" y="188" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#06d6a0" font-weight="500">↻ this cycle repeats throughout the incident</text>
+    </svg>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot audit"></div>Audit Log (Immutable)</div>
+  <div class="legend-item"><div class="legend-dot state"></div>Computed State (Rebuildable)</div>
+  <div class="legend-item"><div class="legend-dot output"></div>Generated Outputs</div>
+  <div class="legend-item"><div class="legend-dot gemini"></div>LLM Advisory (Air Gap)</div>
+</div>
+
+<!-- Three Layer Cards -->
+<div class="section-title"><span class="line"></span>THREE-LAYER DATA MODEL<span class="line"></span></div>
+<div class="arch-grid">
+  <div class="arch-card audit-card">
+    <div class="card-label">Layer 1 — Source of Truth</div>
+    <h3>Append-Only Audit Log</h3>
+    <p>Log files where every entry is permanently recorded — never modified or deleted. Each event gets one line in the file. This is the legal, auditable record of the entire incident. Think of it as the "black box" flight recorder.</p>
+    <div class="properties">
+      <span class="prop-tag">IMMUTABLE</span>
+      <span class="prop-tag">APPEND-ONLY</span>
+      <span class="prop-tag">JSONL FORMAT</span>
+      <span class="prop-tag">SHA-256 VERIFIED</span>
+    </div>
+  </div>
+  <div class="arch-card state-card">
+    <div class="card-label">Layer 2 — Derived View</div>
+    <h3>Computed State</h3>
+    <p>Human-readable files that show the current state of the incident — built automatically by replaying the audit log. You can delete these at any time and regenerate them with one command. They're a convenient "dashboard view," not the source of truth.</p>
+    <div class="properties">
+      <span class="prop-tag">DERIVED</span>
+      <span class="prop-tag">REBUILDABLE</span>
+      <span class="prop-tag">YAML FORMAT</span>
+      <span class="prop-tag">HUMAN-READABLE</span>
+    </div>
+  </div>
+  <div class="arch-card output-card">
+    <div class="card-label">Layer 3 — Presentation</div>
+    <h3>Generated Outputs</h3>
+    <p>Visual dashboards, diagrams, and briefing materials — generated from the current state. These are what you share with leadership, legal, and partner teams. Self-contained files that work offline and can be emailed or posted to SharePoint.</p>
+    <div class="properties">
+      <span class="prop-tag">GENERATED</span>
+      <span class="prop-tag">DISPOSABLE</span>
+      <span class="prop-tag">HTML / MERMAID</span>
+      <span class="prop-tag">SELF-CONTAINED</span>
+    </div>
+  </div>
+</div>
+
+<!-- Main Architecture SVG -->
+<div class="section-title"><span class="line"></span>DATA FLOW &amp; CONNECTIONS<span class="line"></span></div>
+<div class="flow-section">
+  <div class="flow-container">
+    <svg viewBox="0 0 1100 720" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow-audit" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="none" stroke="#f72585" stroke-width="1.5"/>
+        </marker>
+        <marker id="arrow-state" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="none" stroke="#4cc9f0" stroke-width="1.5"/>
+        </marker>
+        <marker id="arrow-output" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="none" stroke="#7b61ff" stroke-width="1.5"/>
+        </marker>
+        <marker id="arrow-gemini" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="none" stroke="#fca311" stroke-width="1.5"/>
+        </marker>
+        <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="none" stroke="#06d6a0" stroke-width="1.5"/>
+        </marker>
+        <filter id="glow-a"><feGaussianBlur stdDeviation="3" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="glow-s"><feGaussianBlur stdDeviation="3" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+
+      <!-- Zone: Controller (Top) -->
+      <rect class="zone-rect" x="30" y="15" width="700" height="100" fill="rgba(6,214,160,0.03)" stroke="rgba(6,214,160,0.15)"/>
+      <text class="zone-label" x="48" y="38" fill="#06d6a0" opacity="0.7">CONTROLLER LAYER (TOOLS &amp; INTERFACE)</text>
+
+      <!-- Notebook -->
+      <rect class="node-box" x="60" y="50" width="180" height="50" fill="#0f1f1a" stroke="#06d6a0" stroke-width="1.5"/>
+      <text class="node-text" x="150" y="68" font-size="13" fill="#06d6a0">JupyterLab</text>
+      <text class="node-sub" x="150" y="87">Notebook / Terminal</text>
+
+      <!-- Python Library -->
+      <rect class="node-box" x="300" y="50" width="200" height="50" fill="#0f1f1a" stroke="#06d6a0" stroke-width="1.5"/>
+      <text class="node-text" x="400" y="68" font-size="13" fill="#06d6a0">ir_assist Python Library</text>
+      <text class="node-sub" x="400" y="87">incident · timeline · ioc · mitre</text>
+
+      <!-- Arrow: Notebook → Library -->
+      <path d="M240,75 L295,75" class="flow-path-solid" stroke="#06d6a0" marker-end="url(#arrow-green)"/>
+      <text class="flow-label" x="268" y="67" fill="#06d6a0">calls</text>
+
+      <!-- Context files -->
+      <rect class="node-box" x="560" y="50" width="150" height="50" fill="#111923" stroke="#5a7089" stroke-width="1"/>
+      <text class="node-text" x="635" y="68" font-size="12" fill="#8899aa">context/</text>
+      <text class="node-sub" x="635" y="87">doctrine · playbook · atlas</text>
+
+      <!-- Zone: Layer 1 - Audit -->
+      <rect class="zone-rect" x="30" y="140" width="700" height="185" fill="rgba(247,37,133,0.03)" stroke="rgba(247,37,133,0.15)"/>
+      <text class="zone-label" x="48" y="163" fill="#f72585" opacity="0.8">LAYER 1 — APPEND-ONLY AUDIT LOG</text>
+
+      <!-- Audit files -->
+      <rect class="node-box" x="60" y="180" width="155" height="42" fill="#1a0a14" stroke="#f72585" stroke-width="1.5" filter="url(#glow-a)" class="pulse-audit"/>
+      <text class="node-text" x="138" y="195" font-size="11.5" fill="#f72585">timeline.jsonl</text>
+      <text class="node-sub" x="138" y="212">append-only events</text>
+
+      <rect class="node-box" x="230" y="180" width="125" height="42" fill="#1a0a14" stroke="#f72585" stroke-width="1.5"/>
+      <text class="node-text" x="293" y="195" font-size="11.5" fill="#f72585">iocs.jsonl</text>
+      <text class="node-sub" x="293" y="212">IOC additions</text>
+
+      <rect class="node-box" x="370" y="180" width="155" height="42" fill="#1a0a14" stroke="#f72585" stroke-width="1.5"/>
+      <text class="node-text" x="448" y="195" font-size="11.5" fill="#f72585">decisions.jsonl</text>
+      <text class="node-sub" x="448" y="212">decision records</text>
+
+      <rect class="node-box" x="540" y="180" width="140" height="42" fill="#1a0a14" stroke="#f72585" stroke-width="1.5"/>
+      <text class="node-text" x="610" y="195" font-size="11.5" fill="#f72585">actions.jsonl</text>
+      <text class="node-sub" x="610" y="212">action items</text>
+
+      <rect class="node-box" x="60" y="238" width="175" height="42" fill="#1a0a14" stroke="#f72585" stroke-width="1.5"/>
+      <text class="node-text" x="148" y="253" font-size="11.5" fill="#f72585">mitre-mapping.jsonl</text>
+      <text class="node-sub" x="148" y="270">ATT&CK techniques</text>
+
+      <rect class="node-box" x="250" y="238" width="175" height="42" fill="#1a0a14" stroke="#f72585" stroke-width="1.5"/>
+      <text class="node-text" x="338" y="253" font-size="11.5" fill="#f72585">phase-changes.jsonl</text>
+      <text class="node-sub" x="338" y="270">IR phase transitions</text>
+
+      <rect class="node-box" x="440" y="238" width="185" height="42" fill="#1a0a14" stroke="#f72585" stroke-width="1.5"/>
+      <text class="node-text" x="533" y="253" font-size="11.5" fill="#f72585">status-updates.jsonl</text>
+      <text class="node-sub" x="533" y="270">IOC &amp; action state changes</text>
+
+      <rect class="node-box" x="640" y="238" width="75" height="42" fill="#1a0a14" stroke="#f72585" stroke-width="1"/>
+      <text class="node-text" x="678" y="253" font-size="10.5" fill="#f72585">incident</text>
+      <text class="node-sub" x="678" y="270">.jsonl</text>
+
+      <!-- Key detail: append() -->
+      <rect x="60" y="296" width="265" height="22" fill="rgba(247,37,133,0.08)" rx="4"/>
+      <text class="flow-label" x="192" y="309" fill="#f72585" font-size="10">open(path, "a") → write(json + "\n")</text>
+
+      <!-- Arrow: Library → Audit (append) -->
+      <path d="M400,100 L400,128 L340,128 L340,175" class="flow-path" stroke="#f72585" marker-end="url(#arrow-audit)"/>
+      <text class="flow-label" x="425" y="138" fill="#f72585">append()</text>
+
+      <!-- Zone: Layer 2 - State -->
+      <rect class="zone-rect" x="30" y="345" width="700" height="115" fill="rgba(76,201,240,0.03)" stroke="rgba(76,201,240,0.15)"/>
+      <text class="zone-label" x="48" y="368" fill="#4cc9f0" opacity="0.8">LAYER 2 — COMPUTED STATE (REBUILDABLE)</text>
+
+      <!-- State computation -->
+      <rect class="node-box" x="60" y="385" width="220" height="50" fill="#0a151e" stroke="#4cc9f0" stroke-width="1.5"/>
+      <text class="node-text" x="170" y="403" font-size="12" fill="#4cc9f0">compute_current_state()</text>
+      <text class="node-sub" x="170" y="422">Replay all logs → merge status updates</text>
+
+      <!-- State YAML files -->
+      <rect class="node-box" x="340" y="385" width="100" height="50" fill="#0a151e" stroke="#4cc9f0" stroke-width="1"/>
+      <text class="node-text" x="390" y="403" font-size="11" fill="#4cc9f0">state/</text>
+      <text class="node-sub" x="390" y="422">*.yaml files</text>
+
+      <rect class="node-box" x="460" y="385" width="120" height="50" fill="#0a151e" stroke="#4cc9f0" stroke-width="1"/>
+      <text class="node-text" x="520" y="403" font-size="11" fill="#4cc9f0">integrity</text>
+      <text class="node-sub" x="520" y="422">SHA-256 hashes</text>
+
+      <!-- Arrow: Audit → State -->
+      <path d="M170,320 L170,380" class="flow-path" stroke="#4cc9f0" marker-end="url(#arrow-state)"/>
+      <text class="flow-label" x="145" y="350" fill="#4cc9f0">replay</text>
+
+      <!-- Arrow: compute → yaml -->
+      <path d="M280,410 L335,410" class="flow-path-solid" stroke="#4cc9f0" marker-end="url(#arrow-state)"/>
+
+      <!-- Zone: Layer 3 - Outputs -->
+      <rect class="zone-rect" x="30" y="480" width="700" height="115" fill="rgba(123,97,255,0.03)" stroke="rgba(123,97,255,0.15)"/>
+      <text class="zone-label" x="48" y="503" fill="#7b61ff" opacity="0.8">LAYER 3 — GENERATED OUTPUTS</text>
+
+      <!-- Output nodes -->
+      <rect class="node-box" x="60" y="518" width="170" height="55" fill="#100e1e" stroke="#7b61ff" stroke-width="1.5"/>
+      <text class="node-text" x="145" y="537" font-size="12" fill="#7b61ff">HTML Dashboard</text>
+      <text class="node-sub" x="145" y="556">Self-contained, offline</text>
+      <text class="node-sub" x="145" y="568">Embeds mermaid.js</text>
+
+      <rect class="node-box" x="250" y="518" width="170" height="55" fill="#100e1e" stroke="#7b61ff" stroke-width="1.5"/>
+      <text class="node-text" x="335" y="537" font-size="12" fill="#7b61ff">Mermaid Diagrams</text>
+      <text class="node-sub" x="335" y="556">.mmd code files</text>
+      <text class="node-sub" x="335" y="568">Render: Lab / Live / Loop</text>
+
+      <rect class="node-box" x="440" y="518" width="160" height="55" fill="#100e1e" stroke="#7b61ff" stroke-width="1.5"/>
+      <text class="node-text" x="520" y="537" font-size="12" fill="#7b61ff">State YAML</text>
+      <text class="node-sub" x="520" y="556">Gemini-consumable</text>
+      <text class="node-sub" x="520" y="568">Human-readable view</text>
+
+      <!-- Arrow: State → Outputs -->
+      <path d="M170,435 L145,513" class="flow-path" stroke="#7b61ff" marker-end="url(#arrow-output)"/>
+      <path d="M280,435 L335,513" class="flow-path" stroke="#7b61ff" marker-end="url(#arrow-output)"/>
+
+      <!-- ═══ AIR GAP ═══ -->
+      <line class="airgap-line" x1="765" y1="30" x2="765" y2="690"/>
+      <rect x="745" y="335" width="40" height="30" fill="var(--bg)" stroke="none"/>
+      <text class="airgap-label" x="765" y="347">A I R</text>
+      <text class="airgap-label" x="765" y="362">G A P</text>
+
+      <!-- Zone: Gemini -->
+      <rect class="zone-rect" x="800" y="140" width="270" height="430" fill="rgba(252,163,17,0.03)" stroke="rgba(252,163,17,0.15)"/>
+      <text class="zone-label" x="818" y="163" fill="#fca311" opacity="0.8">LLM ADVISORY LAYER</text>
+
+      <!-- Gemini CLI -->
+      <rect class="node-box" x="830" y="190" width="210" height="55" fill="#1e1800" stroke="#fca311" stroke-width="1.5"/>
+      <text class="node-text" x="935" y="210" font-size="13" fill="#fca311">Gemini CLI</text>
+      <text class="node-sub" x="935" y="230">Synthesis · Hypotheses · Analysis</text>
+
+      <!-- to-gemini -->
+      <rect class="node-box" x="830" y="275" width="210" height="45" fill="#1e1800" stroke="#fca311" stroke-width="1"/>
+      <text class="node-text" x="935" y="291" font-size="11" fill="#fca311">to-gemini/</text>
+      <text class="node-sub" x="935" y="308">Structured analysis requests</text>
+
+      <!-- from-gemini -->
+      <rect class="node-box" x="830" y="340" width="210" height="45" fill="#1e1800" stroke="#fca311" stroke-width="1"/>
+      <text class="node-text" x="935" y="356" font-size="11" fill="#fca311">from-gemini/</text>
+      <text class="node-sub" x="935" y="373">Advisory outputs</text>
+
+      <!-- Standing instructions -->
+      <rect class="node-box" x="830" y="410" width="210" height="45" fill="#1e1800" stroke="#fca311" stroke-width="1"/>
+      <text class="node-text" x="935" y="426" font-size="11" fill="#fca311">Standing Instructions</text>
+      <text class="node-sub" x="935" y="443">Grounding rules &amp; constraints</text>
+
+      <!-- Human review -->
+      <rect class="node-box" x="840" y="485" width="190" height="60" fill="rgba(252,163,17,0.08)" stroke="#fca311" stroke-width="2" stroke-dasharray="4 2"/>
+      <text class="node-text" x="935" y="505" font-size="13" fill="#fca311">👤 Human Review</text>
+      <text class="node-sub" x="935" y="525">Analyst validates before</text>
+      <text class="node-sub" x="935" y="537">incorporating into record</text>
+
+      <!-- Gemini internal arrows -->
+      <path d="M935,320 L935,335" class="flow-path-solid" stroke="#fca311" marker-end="url(#arrow-gemini)"/>
+      <path d="M935,385 L935,480" class="flow-path-solid" stroke="#fca311" marker-end="url(#arrow-gemini)"/>
+
+      <!-- Cross air-gap arrows -->
+      <!-- to-gemini direction -->
+      <path d="M620,545 Q 710,500 825,295" class="flow-path" stroke="#fca311" marker-end="url(#arrow-gemini)"/>
+      <text class="flow-label" x="730" y="440" fill="#fca311" transform="rotate(-40, 730, 440)">state → request</text>
+
+      <!-- from-gemini to human review then back to audit -->
+      <path d="M840,515 Q 790,610 400,610 Q 200,610 170,600" class="flow-path" stroke="#06d6a0" marker-end="url(#arrow-green)"/>
+      <text class="flow-label" x="500" y="625" fill="#06d6a0">reviewed → append to audit log</text>
+
+      <!-- Reference data -->
+      <rect class="node-box" x="30" y="625" width="700" height="55" fill="var(--surface)" stroke="var(--border)" stroke-width="1"/>
+      <text class="node-text" x="380" y="645" font-size="12" fill="#8899aa">Reference Data</text>
+      <text class="node-sub" x="380" y="665">MITRE ATT&CK (STIX 2.1)  ·  MITRE D3FEND  ·  CISA KEV  ·  FS-ISAC  ·  Abuse.ch feeds</text>
+
+      <!-- Arrow: reference → library -->
+      <path d="M380,625 L380,610" class="flow-path-solid" stroke="#5a7089" opacity="0.4"/>
+
+    </svg>
+  </div>
+</div>
+
+<!-- File Tree -->
+<div class="section-title"><span class="line"></span>INCIDENT DIRECTORY STRUCTURE<span class="line"></span></div>
+<div class="tree-section">
+  <div class="tree-grid">
+    <div class="tree-panel audit-panel">
+      <h4>🔴 audit/ — Immutable Record</h4>
+      <div class="tree-item"><span class="icon">📄</span><span class="fname">timeline.jsonl</span><span class="desc">All events, chronological</span></div>
+      <div class="tree-item"><span class="icon">📄</span><span class="fname">iocs.jsonl</span><span class="desc">IOC additions only</span></div>
+      <div class="tree-item"><span class="icon">📄</span><span class="fname">decisions.jsonl</span><span class="desc">Key decisions + rationale</span></div>
+      <div class="tree-item"><span class="icon">📄</span><span class="fname">actions.jsonl</span><span class="desc">Action item creation</span></div>
+      <div class="tree-item"><span class="icon">📄</span><span class="fname">mitre-mapping.jsonl</span><span class="desc">ATT&CK technique mapping</span></div>
+      <div class="tree-item"><span class="icon">📄</span><span class="fname">phase-changes.jsonl</span><span class="desc">IR phase transitions</span></div>
+      <div class="tree-item"><span class="icon">📄</span><span class="fname">status-updates.jsonl</span><span class="desc">State changes (IOC, action)</span></div>
+      <div class="tree-item"><span class="icon">📄</span><span class="fname">incident.jsonl</span><span class="desc">Creation + field updates</span></div>
+    </div>
+    <div class="tree-panel state-panel">
+      <h4>🔵 state/ — Computed View</h4>
+      <div class="tree-item"><span class="icon">📋</span><span class="fname">incident.yaml</span><span class="desc">Current incident record</span></div>
+      <div class="tree-item"><span class="icon">📋</span><span class="fname">timeline.yaml</span><span class="desc">All timeline entries</span></div>
+      <div class="tree-item"><span class="icon">📋</span><span class="fname">iocs.yaml</span><span class="desc">IOCs with current status</span></div>
+      <div class="tree-item"><span class="icon">📋</span><span class="fname">decisions.yaml</span><span class="desc">All decisions</span></div>
+      <div class="tree-item"><span class="icon">📋</span><span class="fname">actions.yaml</span><span class="desc">Actions with current status</span></div>
+      <div class="tree-item"><span class="icon">📋</span><span class="fname">mitre-mapping.yaml</span><span class="desc">ATT&CK techniques</span></div>
+      <div style="margin-top:12px;padding:10px;background:rgba(76,201,240,0.05);border-radius:6px;font-size:0.78em;color:var(--accent-state);font-family:'JetBrains Mono',monospace">
+        ⟳ rebuild_state_files() — regenerate anytime from audit/
+      </div>
+    </div>
+    <div class="tree-panel output-panel">
+      <h4>🟣 Generated Outputs</h4>
+      <div class="tree-item"><span class="icon">🌐</span><span class="fname">dashboard/status.html</span><span class="desc">Full status dashboard</span></div>
+      <div class="tree-item"><span class="icon">📊</span><span class="fname">diagrams/attack-flow.mmd</span><span class="desc">ATT&CK flow diagram</span></div>
+      <div class="tree-item"><span class="icon">📊</span><span class="fname">diagrams/ir-phase-timeline.mmd</span><span class="desc">Phase progress</span></div>
+      <div class="tree-item"><span class="icon">📊</span><span class="fname">diagrams/ioc-map.mmd</span><span class="desc">IOC relationships</span></div>
+      <div class="tree-item"><span class="icon">📊</span><span class="fname">diagrams/decision-tree.mmd</span><span class="desc">Decision chain</span></div>
+      <div class="tree-item"><span class="icon">📊</span><span class="fname">diagrams/third-party-response.mmd</span><span class="desc">SIFMA phases</span></div>
+    </div>
+    <div class="tree-panel gemini-panel">
+      <h4>🟡 gemini-exchange/ — Air Gap</h4>
+      <div class="tree-item"><span class="icon">📤</span><span class="fname">to-gemini/analysis-request-*.md</span><span class="desc"></span></div>
+      <div class="tree-item"><span class="icon">📥</span><span class="fname">from-gemini/analysis-*.md</span><span class="desc"></span></div>
+      <div style="margin-top:12px;padding:10px;background:rgba(252,163,17,0.05);border-radius:6px;font-size:0.78em;color:var(--accent-gemini);font-family:'JetBrains Mono',monospace;line-height:1.6">
+        Core writes request → User directs Gemini → Gemini writes output → Human reviews → Selectively appended to audit log
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Design Principles -->
+<div class="section-title"><span class="line"></span>DESIGN PRINCIPLES — WHY YOU CAN TRUST THE RECORD<span class="line"></span></div>
+<div class="principles">
+  <div class="principle">
+    <div class="num">01</div>
+    <h4>Append-Only Writes</h4>
+    <p>The audit log is a permanent record — data is only ever added, never changed or deleted. Like a physical logbook: you can write a new line, but you can't erase what's already there. This guarantees the record reflects exactly what happened.</p>
+  </div>
+  <div class="principle">
+    <div class="num">02</div>
+    <h4>State is Always Derived</h4>
+    <p>The "current picture" of an incident is always computed by replaying the audit log from scratch. You can delete the state files and regenerate them — you'll get the exact same result. The log is the truth; everything else is just a convenient view of it.</p>
+  </div>
+  <div class="principle">
+    <div class="num">03</div>
+    <h4>No Hidden State</h4>
+    <p>The notebooks and tools don't hold any critical data in memory. Everything important lives in files. This means you can restart the tool, re-run any command, and get the same result — nothing is lost if the software crashes mid-incident.</p>
+  </div>
+  <div class="principle">
+    <div class="num">04</div>
+    <h4>Human-Gated AI</h4>
+    <p>The AI advisory layer is intentionally separated from the core system — it can only communicate through a dedicated exchange folder. A human analyst reviews every AI suggestion before it enters the official record. AI advises; humans decide.</p>
+  </div>
+  <div class="principle">
+    <div class="num">05</div>
+    <h4>Tamper-Evident</h4>
+    <p>Every log file has a cryptographic fingerprint (SHA-256 hash) displayed on the dashboard. If anyone modifies the record after the fact, the fingerprint changes — making tampering immediately detectable. Built for regulatory and legal defensibility.</p>
+  </div>
+  <div class="principle">
+    <div class="num">06</div>
+    <h4>Plain-Text &amp; Portable</h4>
+    <p>All log files use standard text formats that work with common tools — no proprietary database or special software required to inspect the record. One entry per line, readable by any analyst on any system. Easy to search, filter, compare, and archive.</p>
+  </div>
+</div>
+
+<div class="footer">
+  IR-ASSIST v2.0 — AI-Augmented Incident Response Coordination · Tamper-Evident Audit Log · Human-Gated AI Advisory · Built for Speed and Accountability
+</div>
+
+</div>
+</body>
+</html>
