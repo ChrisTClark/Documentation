@@ -1,0 +1,1285 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# IR-ASSIST PLAYBOOK: Third-Party Cybersecurity Incident Response
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Perspective:    The Bank (client organization / covered entity)
+# Scenario:       A third-party service provider (TPSP) has suffered or is
+#                 suspected to have suffered a material cybersecurity incident.
+#
+# Frameworks:     SIFMA-FSSCC Reconnection Framework (December 2025)
+#                 NYDFS 23 NYCRR 500 (Cybersecurity Requirements)
+#                 NIST CSF 2.0 / NIST SP 800-61
+#                 MITRE ATT&CK for Enterprise
+#
+# Usage:          This file is consumed by IR-ASSIST and Gemini CLI as
+#                 structured context. Each phase is sequential. Actions within
+#                 a phase are ordered by priority. Decision gates must be
+#                 satisfied before advancing to the next phase.
+#
+# Version:        1.0
+# Last Updated:   2026-02-10
+# ══════════════════════════════════════════════════════════════════════════════
+
+playbook:
+  id: PB-TPSP-001
+  title: "Third-Party Service Provider Cybersecurity Incident Response"
+  version: "1.0"
+  effective_date: "2026-02-10"
+  classification: CONFIDENTIAL
+  owner: "Information Security — Incident Response"
+  review_cycle: "Annual or after each activation"
+
+  scope:
+    description: >
+      Activated when the Bank receives credible information that a third-party
+      service provider (TPSP) has experienced or is experiencing a material
+      cybersecurity incident that may affect the Bank's systems, data, or
+      operations. This includes ransomware, data breaches, business email
+      compromise, supply chain attacks, and any incident requiring potential
+      disconnection from the TPSP.
+    applies_to:
+      - "Critical and high-risk third-party service providers"
+      - "Cloud service providers (IaaS, PaaS, SaaS)"
+      - "Payment processors and financial market infrastructure"
+      - "Data aggregators and analytics providers"
+      - "Managed security service providers (MSSPs)"
+      - "Any TPSP with network connectivity, data access, or API integration"
+    activation_triggers:
+      - "FS-ISAC alert naming a Bank TPSP"
+      - "Direct notification from the TPSP of a cybersecurity incident"
+      - "Regulatory or law enforcement notification"
+      - "Anomalous activity detected on Bank systems linked to TPSP connections"
+      - "Media reporting of a TPSP breach (unconfirmed — triggers assessment)"
+      - "CISA or sector agency advisory involving a Bank TPSP"
+
+  regulatory_references:
+    - id: SIFMA-FSSCC-2025
+      title: "Financial Services Sector Reconnection Framework"
+      version: "December 2025"
+      publisher: "SIFMA / FSSCC"
+      relevance: "Primary framework for disconnection, reconnection, and attestation"
+    - id: NYDFS-500
+      title: "23 NYCRR Part 500 — Cybersecurity Requirements for Financial Services"
+      sections:
+        - "500.7 — Access Privileges and Management"
+        - "500.11 — Third-Party Service Provider Security Policy"
+        - "500.17 — Notices to Superintendent (72-hour notification)"
+      relevance: "Regulatory requirements for TPSP access controls and incident notification"
+    - id: NIST-SP-800-61
+      title: "Computer Security Incident Handling Guide"
+      relevance: "IR phase model (Preparation, Detection, Containment, Eradication, Recovery, Lessons Learned)"
+    - id: MITRE-ATTACK
+      title: "MITRE ATT&CK for Enterprise"
+      relevance: "TTP classification and threat hunting prioritization"
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # ROLES AND RESPONSIBILITIES
+  # ══════════════════════════════════════════════════════════════════════════
+
+  roles:
+    - role: Incident Commander (IC)
+      responsibilities:
+        - "Overall incident coordination and decision authority"
+        - "Owns the decision to disconnect and reconnect"
+        - "Escalation to executive leadership and Board"
+        - "Ensures regulatory notification timelines are met"
+
+    - role: Cybersecurity / SOC Lead
+      responsibilities:
+        - "Technical assessment of threat to Bank systems"
+        - "IOC collection, analysis, and deployment"
+        - "Threat hunting and monitoring of Bank environment"
+        - "MITRE ATT&CK mapping and gap analysis"
+
+    - role: Third-Party Risk Management (TPRM)
+      responsibilities:
+        - "Primary liaison with TPSP during incident"
+        - "Manages vendor communication and information requests"
+        - "Tracks TPSP progress through SIFMA framework phases"
+        - "Coordinates attestation review"
+
+    - role: Network / Infrastructure Team
+      responsibilities:
+        - "Executes disconnection and reconnection actions"
+        - "Manages VPN, firewall, DNS, and routing changes"
+        - "Implements network segmentation and monitoring"
+
+    - role: Identity and Access Management (IAM)
+      responsibilities:
+        - "Revokes TPSP credentials and service accounts"
+        - "Disables SSO federation, OAuth tokens, API keys"
+        - "Manages credential rotation and re-provisioning"
+
+    - role: Legal / Compliance
+      responsibilities:
+        - "Regulatory notification assessment and execution"
+        - "Contract review for TPSP obligations"
+        - "Data protection and privacy impact assessment"
+        - "Preservation of evidence for potential litigation"
+
+    - role: Business Line Owner
+      responsibilities:
+        - "Assesses business impact of disconnection"
+        - "Activates business continuity workarounds"
+        - "Owns the business decision to reconnect (per SIFMA framework)"
+        - "Communicates with affected customers and counterparties"
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # PHASE 0: DETECTION AND INITIAL RESPONSE
+  # ══════════════════════════════════════════════════════════════════════════
+  #
+  # Timeline: Hours 0–4 from first alert
+  # IR Phase: Identification
+  # SIFMA Context: Pre-disconnection assessment
+  # ══════════════════════════════════════════════════════════════════════════
+
+  phases:
+    - phase: 0
+      name: "Detection and Initial Response"
+      ir_phase: "Identification"
+      sifma_alignment: "Pre-Disconnection"
+      typical_timeline: "Hours 0–4"
+      outcome: >
+        The Bank has confirmed the alert, activated the IR team, identified
+        all connections to the affected TPSP, and made an initial disconnection
+        decision based on available information.
+
+      actions:
+        # ── Alert Validation ──
+        - seq: 1
+          action: "Validate the alert source and credibility"
+          owner: "SOC Lead"
+          priority: CRITICAL
+          category: detection
+          details: >
+            Confirm the alert through a second source where possible.
+            FS-ISAC alerts, direct vendor notification, and regulatory
+            notices are generally treated as credible. Media reports
+            require verification before full activation.
+          checklist:
+            - "Identify the alert source (FS-ISAC, vendor, regulator, media, internal detection)"
+            - "Confirm the named TPSP is a Bank vendor — check TPRM inventory"
+            - "Determine criticality tier of the TPSP (critical, high, moderate, low)"
+            - "Attempt to reach TPSP security contact via pre-established channel"
+            - "If source is unverified, escalate to TPRM for vendor confirmation"
+
+        - seq: 2
+          action: "Activate Incident Response team"
+          owner: "Incident Commander"
+          priority: CRITICAL
+          category: communication
+          details: >
+            Stand up the IR team. For critical and high-risk TPSPs, this is
+            an immediate activation. For moderate/low TPSPs, this may begin
+            as a monitoring posture with defined escalation triggers.
+          checklist:
+            - "Open incident in IR-ASSIST (create_incident with is_third_party=True)"
+            - "Assign Incident Commander"
+            - "Notify SOC, TPRM, Network, IAM, Legal, Business Line Owner"
+            - "Establish secure communication channel (not via the compromised TPSP)"
+            - "Begin timeline logging — every action, every decision, from this point forward"
+
+        # ── Connection Inventory ──
+        - seq: 3
+          action: "Inventory all connections to the TPSP"
+          owner: "Network / Infrastructure Team"
+          priority: CRITICAL
+          category: containment
+          details: >
+            Identify every technical connection between the Bank and the TPSP.
+            This is prerequisite to any disconnection decision. Connections
+            may exist that are outside routine provisioning systems.
+          checklist:
+            - "Site-to-site VPN tunnels"
+            - "MPLS or dedicated circuits"
+            - "API integrations (REST, SOAP, SFTP, MQ)"
+            - "Cloud interconnects (VPC peering, Private Link, Direct Connect)"
+            - "SSO/SAML federation and OAuth token grants"
+            - "Service accounts and shared credentials"
+            - "Email domain trust relationships"
+            - "DNS delegations or conditional forwarding"
+            - "File shares, SFTP drops, or shared storage"
+            - "Agent-based connections (monitoring, patching, remote access)"
+            - "Any legacy or undocumented connections (check with long-tenured staff)"
+          ir_assist_tracking:
+            log_to: "timeline.jsonl"
+            category: "containment"
+            note: "Record each discovered connection as a timeline entry"
+
+        # ── Initial Risk Assessment ──
+        - seq: 4
+          action: "Perform initial risk assessment"
+          owner: "SOC Lead"
+          priority: CRITICAL
+          category: detection
+          details: >
+            Based on available information, assess the risk to the Bank.
+            This drives the disconnection decision. Per SIFMA, the cybersecurity
+            function assesses residual cyber risk; the business makes the
+            disconnect/reconnect decision.
+          decision_factors:
+            - factor: "Type of incident at TPSP"
+              examples: "Ransomware, data breach, BEC, supply chain, insider, unknown"
+              weight: HIGH
+            - factor: "TPSP cooperation level"
+              examples: "Full disclosure, partial, non-responsive, adversarial"
+              weight: HIGH
+            - factor: "Data exposure risk"
+              examples: "NPI, PII, transaction data, credentials, none confirmed"
+              weight: HIGH
+            - factor: "Network connectivity risk"
+              examples: "Direct network access, API only, data-in-transit only, air-gapped"
+              weight: HIGH
+            - factor: "Incident containment status at TPSP"
+              examples: "Contained, not contained, unknown"
+              weight: CRITICAL
+            - factor: "Bank compensating controls"
+              examples: "Network segmentation, EDR coverage, DLP, monitoring in place"
+              weight: MEDIUM
+          sifma_reference: >
+            SIFMA Disconnection section: "Consider the following factors when
+            deciding to disconnect: Type of security incident, Level of impact,
+            Current status, Level of cooperation from the compromised organisation."
+
+        # ── Disconnection Decision ──
+        - seq: 5
+          action: "Make disconnection decision"
+          owner: "Incident Commander"
+          priority: CRITICAL
+          category: decision
+          details: >
+            The IC makes the disconnection decision based on the risk assessment,
+            with input from the cybersecurity function and the business line owner.
+            Per SIFMA: "Each firm will need to make their own disconnect/reconnect
+            decision based on individual business processes and risk tolerance."
+          decision_options:
+            - option: "Full disconnection"
+              trigger: >
+                TPSP has confirmed active ransomware or uncontained breach;
+                OR incident status is unknown and TPSP is non-cooperative;
+                OR TPSP has direct network access to Bank systems.
+              sifma_reference: "Terminate all connections between the two parties"
+
+            - option: "Partial disconnection"
+              trigger: >
+                Some connections are higher risk than others and can be
+                individually assessed. TPSP is cooperative and providing
+                information. Bank has strong compensating controls on
+                remaining connections.
+              sifma_reference: >
+                "Disconnecting does not necessarily mean complete termination
+                of all connections... different connections might present
+                different levels of risk."
+
+            - option: "Suspend and monitor"
+              trigger: >
+                TPSP reports contained incident with limited scope.
+                Bank connections are API-only or data-in-transit with
+                strong monitoring. Business impact of disconnection is severe.
+              sifma_types:
+                - "Suspend connection — remain physically connected but switch off data exchange"
+                - "Pause traffic — remain connected, maintain access, stop sending traffic"
+
+            - option: "Enhanced monitoring only"
+              trigger: >
+                TPSP incident is confirmed minor or does not affect services
+                provided to the Bank. Bank has no direct network connectivity.
+                Continue normal operations with heightened alerting thresholds.
+
+          ir_assist_tracking:
+            log_to: "decisions.jsonl"
+            required_fields:
+              - "decision"
+              - "rationale"
+              - "alternatives_considered"
+              - "risk_level"
+              - "doctrine_reference"
+
+      decision_gate:
+        name: "Disconnection decision made and executed"
+        criteria:
+          - "All TPSP connections inventoried"
+          - "Disconnection decision documented with rationale in IR-ASSIST"
+          - "Disconnection actions executed (if applicable)"
+          - "Business continuity workarounds activated (if applicable)"
+          - "Initial regulatory notification assessment completed"
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 1: PROTECT AND CONTAIN
+    # ══════════════════════════════════════════════════════════════════════════
+    #
+    # Timeline: Hours 0–24 (overlaps with Phase 0, starts as soon as
+    #           disconnection decision is made)
+    # IR Phase: Containment
+    # SIFMA Alignment: Disconnection execution + beginning of Phase 1 (Assess)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    - phase: 1
+      name: "Protect and Contain"
+      ir_phase: "Containment"
+      sifma_alignment: "Disconnection + Phase 1 (Assess)"
+      typical_timeline: "Hours 0–24"
+      outcome: >
+        The Bank has executed all disconnection actions, secured its own
+        environment against potential lateral compromise, revoked all TPSP
+        access per NYDFS 500.7, and begun gathering threat intelligence
+        from the TPSP and external sources.
+
+      actions:
+        # ── Network Disconnection ──
+        - seq: 1
+          action: "Execute network disconnection"
+          owner: "Network / Infrastructure Team"
+          priority: CRITICAL
+          category: containment
+          details: >
+            Sever network connectivity based on the disconnection decision.
+            Document each action with timestamp, method, and confirmation.
+          checklist:
+            - "Disable site-to-site VPN tunnels — confirm tunnel state DOWN"
+            - "Remove or null-route TPSP IP ranges at perimeter firewalls"
+            - "Disable MPLS or dedicated circuit connections"
+            - "Remove VPC peering, Private Link, or Direct Connect configurations"
+            - "Block TPSP IP ranges at cloud security groups / NSGs"
+            - "Update DNS to remove any TPSP-dependent resolution"
+            - "Confirm disconnection with network monitoring (no traffic flowing)"
+          ir_assist_tracking:
+            log_to: "actions.jsonl"
+            complete_with: "Confirmation timestamp and verification method"
+
+        # ── Access Revocation (NYDFS 500.7) ──
+        - seq: 2
+          action: "Revoke all TPSP access to Bank systems"
+          owner: "Identity and Access Management"
+          priority: CRITICAL
+          category: containment
+          regulatory_reference: "NYDFS 23 NYCRR 500.7"
+          details: >
+            Covered Entities must disable the TPSP's access to the Covered
+            Entity's Information Systems. This includes revoking system access
+            for TPSP personnel and subcontractors and deactivating service
+            accounts. Give special attention to residual or unmonitored access
+            points that may fall outside routine access provisioning systems.
+          checklist:
+            - "Disable all TPSP user accounts in Active Directory / IdP"
+            - "Deactivate all TPSP service accounts"
+            - "Revoke SSO/SAML federation trust with TPSP identity provider"
+            - "Invalidate all OAuth tokens and refresh tokens"
+            - "Rotate or revoke all shared API keys and secrets"
+            - "Revoke TPSP access to shared cloud resources (S3, Azure Blob, GCS)"
+            - "Disable TPSP certificates used for mutual TLS authentication"
+            - "Remove TPSP entries from IP allowlists and conditional access policies"
+            - "Check for and revoke any delegated admin roles in SaaS platforms"
+            - "Audit for residual access points outside routine provisioning systems"
+            - "Document each revocation with timestamp and verification"
+          nydfs_500_7_note: >
+            For cloud-based TPSPs: revoke identity federation tools (SSO, OAuth),
+            API integrations, and external storage access. Confirm that any
+            remaining snapshots, backups, or cached datasets are addressed.
+            Access points that became redundant during the TPSP relationship
+            should be eliminated, not left in place.
+
+        # ── Email Domain Protection ──
+        - seq: 3
+          action: "Block or quarantine TPSP email domain"
+          owner: "Email / Messaging Admin"
+          priority: HIGH
+          category: containment
+          details: >
+            If the TPSP incident involves or may involve business email
+            compromise, block the TPSP email domain at the gateway.
+            Quarantine (do not delete) recent messages for forensic review.
+          checklist:
+            - "Block inbound email from TPSP domain at email security gateway"
+            - "Quarantine messages from TPSP domain received in last 30 days"
+            - "Alert users who have recently corresponded with TPSP contacts"
+            - "Review and hold any pending wire transfers or payment instructions from TPSP"
+            - "Add TPSP domain to suspicious sender monitoring"
+          decision_note: >
+            This action should be proportional to the threat. If the TPSP
+            incident is ransomware with no BEC indicators, email blocking
+            may be deferred in favor of enhanced monitoring. Log the decision
+            either way.
+
+        # ── IOC Collection and Deployment ──
+        - seq: 4
+          action: "Collect and deploy indicators of compromise"
+          owner: "SOC Lead"
+          priority: HIGH
+          category: detection
+          details: >
+            Gather IOCs from all available sources. Deploy detection rules
+            to Bank security tooling immediately. Do not wait for a complete
+            IOC package — deploy what you have and update iteratively.
+          sources:
+            - "TPSP incident response firm (request IOC package)"
+            - "FS-ISAC alerts and member sharing"
+            - "CISA advisories and Known Exploited Vulnerabilities catalog"
+            - "Abuse.ch threat feeds (URLhaus, MalwareBazaar, ThreatFox)"
+            - "Open-source threat intelligence (OTX, VirusTotal)"
+            - "Bank internal detection (EDR, SIEM, NDR, DNS logs)"
+          ioc_types_to_collect:
+            - "IP addresses (C2 servers, exfiltration endpoints)"
+            - "Domain names (C2, phishing, malware distribution)"
+            - "File hashes (SHA-256 preferred; also SHA-1, MD5)"
+            - "Email addresses and subjects (phishing lures)"
+            - "URLs (malware delivery, credential harvesting)"
+            - "User-agent strings"
+            - "Registry keys and file paths (host-based indicators)"
+            - "Certificate hashes"
+            - "YARA rules (if available from TPSP IR firm)"
+          deployment_targets:
+            - "Perimeter firewalls — block C2 IPs and domains"
+            - "DNS security — sinkhole malicious domains"
+            - "Email gateway — block sender addresses and subjects"
+            - "EDR — deploy file hash and behavioral detection rules"
+            - "SIEM — create correlation rules for IOC matches"
+            - "Web proxy — block malicious URLs"
+            - "NDR — deploy network signatures"
+          ir_assist_tracking:
+            log_to: "iocs.jsonl"
+            note: "Each IOC logged with type, value, source, TLP, and action taken"
+
+        # ── Credential Rotation ──
+        - seq: 5
+          action: "Rotate all shared credentials"
+          owner: "IAM Team"
+          priority: HIGH
+          category: containment
+          details: >
+            Any credential that the TPSP may have had access to — directly
+            or indirectly — should be rotated. This includes credentials
+            the Bank uses to connect TO the TPSP, and credentials the TPSP
+            uses to connect TO the Bank.
+          checklist:
+            - "Rotate all API keys and secrets shared with TPSP"
+            - "Rotate service account passwords"
+            - "Rotate database connection strings if TPSP had access"
+            - "Rotate SSH keys used for SFTP or server access"
+            - "Rotate encryption keys if TPSP had access to key material"
+            - "Force password reset for any Bank users who had accounts on TPSP systems"
+            - "Review and rotate any credentials stored in TPSP-managed vaults"
+
+        # ── Internal Threat Hunt ──
+        - seq: 6
+          action: "Initiate threat hunt on Bank environment"
+          owner: "SOC Lead"
+          priority: HIGH
+          category: detection
+          details: >
+            Proactively search the Bank environment for evidence of
+            compromise that may have occurred via the TPSP connection
+            before disconnection. Focus on the TPSP connection path
+            and systems that exchanged data with the TPSP.
+          hunt_priorities:
+            - description: "Search for IOC matches across all log sources"
+              timeframe: "Last 90 days minimum"
+              tools: "SIEM, EDR, NDR"
+            - description: "Review authentication logs for TPSP service accounts"
+              timeframe: "Last 90 days"
+              tools: "Active Directory, IdP, SIEM"
+              focus: "Unusual times, unusual source IPs, privilege escalation"
+            - description: "Analyze network traffic to/from TPSP IP ranges"
+              timeframe: "Last 30 days"
+              tools: "NDR, firewall logs, NetFlow"
+              focus: "Unusual volumes, unusual protocols, connections to unexpected hosts"
+            - description: "Review DNS queries for known-bad domains"
+              timeframe: "Last 90 days"
+              tools: "DNS security, SIEM"
+            - description: "Check endpoint telemetry on systems that interfaced with TPSP"
+              timeframe: "Last 30 days"
+              tools: "EDR"
+              focus: "Process execution anomalies, persistence mechanisms, lateral movement"
+          mitre_techniques_to_hunt:
+            - id: T1078
+              name: "Valid Accounts"
+              hunt: "Compromised TPSP service accounts used for lateral movement"
+            - id: T1021
+              name: "Remote Services"
+              hunt: "RDP, SSH, or VPN from TPSP network segments"
+            - id: T1071
+              name: "Application Layer Protocol"
+              hunt: "C2 communication over HTTPS, DNS tunneling"
+            - id: T1486
+              name: "Data Encrypted for Impact"
+              hunt: "Ransomware precursors — mass file access, shadow copy deletion"
+            - id: T1048
+              name: "Exfiltration Over Alternative Protocol"
+              hunt: "Data leaving via TPSP connection path"
+            - id: T1566
+              name: "Phishing"
+              hunt: "Phishing from compromised TPSP email accounts"
+
+        # ── Regulatory Assessment ──
+        - seq: 7
+          action: "Assess regulatory notification requirements"
+          owner: "Legal / Compliance"
+          priority: HIGH
+          category: compliance
+          details: >
+            Determine whether the incident triggers mandatory notification
+            to regulators. NYDFS requires notification within 72 hours of
+            determining that a cybersecurity event has occurred. Other
+            regulators may have different timelines.
+          checklist:
+            - "Assess NYDFS 500.17 notification requirement (72 hours)"
+            - "Assess OCC/FDIC/Federal Reserve notification requirements"
+            - "Assess SEC/FINRA notification requirements (if applicable)"
+            - "Assess state data breach notification laws (if PII exposed)"
+            - "Assess GDPR notification (if EU data subjects affected)"
+            - "Determine if law enforcement notification is warranted"
+            - "Document notification decisions and timelines in IR-ASSIST"
+          ir_assist_tracking:
+            log_to: "decisions.jsonl"
+            note: "Log each regulatory notification decision with rationale"
+
+        # ── Stakeholder Communication ──
+        - seq: 8
+          action: "Establish communication cadence"
+          owner: "Incident Commander"
+          priority: HIGH
+          category: communication
+          details: >
+            Set up regular communication with all stakeholders. Per SIFMA:
+            communication should occur both bilaterally with the TPSP and
+            through relevant sector groups. Use verified channels only.
+          checklist:
+            - "Establish direct line with TPSP security/IR team (verified contact)"
+            - "Set communication cadence with TPSP (e.g., twice daily calls)"
+            - "Brief executive leadership and CRO"
+            - "Brief Board or Board committee (if severity warrants)"
+            - "Coordinate with FS-ISAC for sector-wide intelligence sharing"
+            - "Prepare initial internal communication for affected business lines"
+            - "Do NOT communicate through TPSP email or messaging systems"
+
+      decision_gate:
+        name: "Containment confirmed — ready for assessment"
+        criteria:
+          - "All TPSP connections disconnected or monitored per decision"
+          - "All TPSP access revoked and credentials rotated"
+          - "IOCs deployed to Bank security tooling"
+          - "Initial threat hunt underway — no evidence of Bank compromise (or findings documented)"
+          - "Regulatory notification assessment complete"
+          - "Business continuity workarounds in place"
+          - "Communication channels established with TPSP and stakeholders"
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 2: ASSESS
+    # ══════════════════════════════════════════════════════════════════════════
+    #
+    # Timeline: Hours 24–72+
+    # IR Phase: Containment / Eradication
+    # SIFMA Alignment: Phase 1 (Assess)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    - phase: 2
+      name: "Assess"
+      ir_phase: "Containment / Eradication"
+      sifma_alignment: "Phase 1 — Assess"
+      typical_timeline: "Hours 24–72+"
+      outcome: >
+        The Bank has a clear understanding of the TPSP incident scope,
+        the potential impact to Bank systems and data, and has completed
+        its internal threat hunt. The Bank is tracking the TPSP's progress
+        through its own incident response.
+      sifma_outcome_statement: >
+        The compromised organization has identified the type and extent of
+        the attack and implemented its incident response playbooks. They have
+        understanding of (i) the attack to limit further impacts and (ii)
+        impacts to operations, technology, markets, customers and supply
+        chain to facilitate remediation.
+
+      actions:
+        - seq: 1
+          action: "Request and analyze TPSP incident information"
+          owner: "TPRM Lead"
+          priority: CRITICAL
+          category: third-party
+          details: >
+            Request the minimum information set defined by SIFMA Phase 1.
+            Track what the TPSP has provided and what remains outstanding.
+          sifma_information_request:
+            - field: "Timing of Incident"
+              description: "When the incident occurred and key timeline milestones"
+            - field: "Type of Incident"
+              description: "Ransomware, DDoS, malicious attack, phishing, BEC, insider, unknown"
+            - field: "Nature of Incident"
+              description: "Description of incident and potential impact to the Bank; data exposure scope and classification"
+            - field: "Source of Incident Information"
+              description: "How the breach was discovered — self-identified, third-party notification, etc."
+            - field: "Investigation Details"
+              description: "Actions taken to confirm scope and impact, including TTPs of initial infection"
+            - field: "Remediation Activities"
+              description: "What has been done to contain/remediate; whether IR firm engaged; regulatory and law enforcement status"
+            - field: "Impact Analysis"
+              description: "Impact to operations, technology, data/privacy, and the Bank specifically"
+            - field: "Data Sharing"
+              description: "Audit logs, IOCs, and forensic reports (request explicitly)"
+            - field: "Next Steps"
+              description: "Remaining actions and timeline for remediation and service restoration"
+
+        - seq: 2
+          action: "Map TPSP incident to MITRE ATT&CK"
+          owner: "SOC Lead"
+          priority: HIGH
+          category: detection
+          details: >
+            Based on TPSP-provided TTPs and IOCs, map the adversary's
+            techniques to ATT&CK. This drives threat hunting priorities
+            and helps identify gaps in the Bank's detection coverage.
+          checklist:
+            - "Map initial access technique (phishing, exploit, supply chain, valid accounts)"
+            - "Map execution and persistence techniques"
+            - "Map lateral movement techniques (critical for assessing Bank risk)"
+            - "Map exfiltration techniques (critical for data exposure assessment)"
+            - "Map impact techniques (ransomware, destruction, defacement)"
+            - "Identify techniques not yet confirmed — these are threat hunt priorities"
+            - "Cross-reference with CISA KEV for exploited vulnerabilities"
+          ir_assist_tracking:
+            log_to: "mitre-mapping.jsonl"
+            note: "Log each technique with evidence, confidence level, and detection status"
+
+        - seq: 3
+          action: "Complete internal threat hunt"
+          owner: "SOC Lead"
+          priority: HIGH
+          category: detection
+          details: >
+            Complete the threat hunt initiated in Phase 1. Expand scope
+            based on new IOCs and TTPs received from the TPSP. Document
+            all findings — including negative findings (no evidence found).
+          checklist:
+            - "Complete IOC sweep across all log sources (90-day lookback)"
+            - "Complete endpoint sweep on TPSP-connected systems"
+            - "Review all authentication events for TPSP accounts (pre-revocation)"
+            - "Analyze data flows to/from TPSP for anomalies"
+            - "Review privileged account activity during exposure window"
+            - "Document findings in IR-ASSIST — positive AND negative results"
+
+        - seq: 4
+          action: "Assess data exposure"
+          owner: "Data Protection / Legal"
+          priority: HIGH
+          category: compliance
+          details: >
+            Determine what Bank data the TPSP held or had access to, and
+            whether that data may have been exposed in the TPSP incident.
+          checklist:
+            - "Inventory data types shared with or accessible by TPSP"
+            - "Classify data (NPI, PII, transaction data, credentials, market data)"
+            - "Determine if data was encrypted at rest and in transit"
+            - "Assess whether TPSP backup copies of Bank data may be compromised"
+            - "Determine if data breach notification to customers is required"
+            - "Request TPSP confirmation of data exposure scope"
+
+        - seq: 5
+          action: "Maintain heightened monitoring"
+          owner: "SOC Lead"
+          priority: HIGH
+          category: detection
+          details: >
+            Keep enhanced monitoring in place throughout the assessment phase.
+            This is not a one-time sweep — continuous monitoring is required.
+          checklist:
+            - "SIEM alerts at reduced thresholds for TPSP-related indicators"
+            - "EDR in heightened sensitivity mode on previously-connected systems"
+            - "Daily review of firewall deny logs for TPSP IP ranges"
+            - "Monitor for new IOCs as they are published"
+            - "Daily threat hunting sessions focused on ATT&CK gaps"
+
+      decision_gate:
+        name: "Assessment complete — Bank exposure determined"
+        criteria:
+          - "TPSP incident scope understood (type, extent, containment status)"
+          - "MITRE ATT&CK mapping complete with confidence levels"
+          - "Internal threat hunt complete — findings documented"
+          - "Data exposure assessment complete"
+          - "Regulatory notifications filed (if required)"
+          - "TPSP cooperation level assessed and documented"
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 3: MONITOR TPSP REMEDIATION
+    # ══════════════════════════════════════════════════════════════════════════
+    #
+    # Timeline: Days 2–14+
+    # IR Phase: Eradication
+    # SIFMA Alignment: Phase 2 (Remediate) — Bank monitors TPSP progress
+    # ══════════════════════════════════════════════════════════════════════════
+
+    - phase: 3
+      name: "Monitor TPSP Remediation"
+      ir_phase: "Eradication"
+      sifma_alignment: "Phase 2 — Remediate"
+      typical_timeline: "Days 2–14+"
+      outcome: >
+        The TPSP has restored affected systems to a known trusted state
+        and can demonstrate the integrity of remediated systems. The Bank
+        has maintained its own monitoring and is tracking TPSP remediation
+        progress against SIFMA Phase 2 criteria.
+      sifma_outcome_statement: >
+        The compromised organization has restored affected networks to a
+        known trusted state that is appropriately protected and can evidence
+        or demonstrate the integrity of remediated systems, their software
+        images, libraries, reference data, hardware, and other components
+        as required.
+
+      actions:
+        - seq: 1
+          action: "Track TPSP remediation activities"
+          owner: "TPRM Lead"
+          priority: HIGH
+          category: third-party
+          details: >
+            Monitor the TPSP's progress through remediation. Per SIFMA,
+            the compromised organization should be taking the following steps.
+            Track which have been communicated as complete.
+          sifma_remediation_checklist:
+            - item: "Affected systems taken offline"
+              status_field: "tpsp_systems_offline"
+            - item: "Malware and threat actor eliminated from all environments"
+              status_field: "tpsp_actor_eliminated"
+            - item: "Business continuity plans enabled"
+              status_field: "tpsp_bcp_active"
+            - item: "Security control failures remediated"
+              status_field: "tpsp_controls_remediated"
+            - item: "Relevant systems patched"
+              status_field: "tpsp_patched"
+            - item: "Compensating controls implemented"
+              status_field: "tpsp_compensating_controls"
+            - item: "Enhanced monitoring enabled"
+              status_field: "tpsp_monitoring_enhanced"
+            - item: "Integrity checks completed on restored components"
+              status_field: "tpsp_integrity_verified"
+            - item: "Corrupt transactions identified and communicated"
+              status_field: "tpsp_transactions_reconciled"
+
+        - seq: 2
+          action: "Maintain Bank monitoring and hunting posture"
+          owner: "SOC Lead"
+          priority: HIGH
+          category: detection
+          details: >
+            Continue daily threat hunting and enhanced monitoring.
+            Update IOC sets as new intelligence becomes available.
+            This phase may last weeks — maintain discipline.
+          checklist:
+            - "Daily threat hunt sessions (minimum 1 hour)"
+            - "Update IOC detection rules as new indicators are shared"
+            - "Monitor for secondary attacks or copycat campaigns"
+            - "Continue monitoring previously-connected systems"
+            - "Brief SOC team on latest TPSP incident developments"
+
+        - seq: 3
+          action: "Coordinate business workarounds"
+          owner: "Business Line Owner"
+          priority: MEDIUM
+          category: communication
+          details: >
+            Manage the business impact of disconnection. This may involve
+            manual processing, alternative vendors, or reduced service levels.
+            Document all workarounds for eventual unwinding.
+          checklist:
+            - "Document all active business workarounds"
+            - "Track financial impact of disconnection"
+            - "Identify and manage customer-facing impacts"
+            - "Coordinate with operations on transaction reconciliation"
+            - "Plan for workaround unwinding upon reconnection"
+
+        - seq: 4
+          action: "Prepare reconnection criteria"
+          owner: "Incident Commander"
+          priority: MEDIUM
+          category: decision
+          details: >
+            Define what the Bank needs to see from the TPSP before
+            reconnection will be considered. This sets expectations
+            for the Assurance phase and prevents rushed reconnection.
+          reconnection_prerequisites:
+            - "Written attestation from TPSP or their IR firm"
+            - "Complete IOC/TTP package shared with the Bank"
+            - "Evidence that threat actor has been fully removed"
+            - "Evidence of security control remediation"
+            - "Root cause identified and addressed"
+            - "Enhanced monitoring in place at TPSP"
+            - "Integrity verification of systems the Bank connects to"
+            - "Clear plan for test reconnection process"
+
+      decision_gate:
+        name: "TPSP remediation complete — ready for assurance review"
+        criteria:
+          - "TPSP has communicated completion of remediation activities"
+          - "TPSP IR firm engaged (or reason documented why not)"
+          - "No evidence of Bank compromise found in ongoing monitoring"
+          - "Bank reconnection prerequisites defined and communicated to TPSP"
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 4: ASSURANCE AND ATTESTATION REVIEW
+    # ══════════════════════════════════════════════════════════════════════════
+    #
+    # Timeline: Days 7–30+
+    # IR Phase: Eradication / Recovery
+    # SIFMA Alignment: Phase 3 (Assure)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    - phase: 4
+      name: "Assurance and Attestation Review"
+      ir_phase: "Eradication / Recovery"
+      sifma_alignment: "Phase 3 — Assure"
+      typical_timeline: "Days 7–30+"
+      outcome: >
+        The Bank has received and reviewed the TPSP attestation and
+        supporting evidence. The cybersecurity function has provided its
+        risk assessment to the business line owner, who will make the
+        reconnection decision.
+      sifma_outcome_statement: >
+        The compromised organization has provided assurance to external
+        stakeholders over the course of the incident culminating with an
+        attestation signed by a contracted incident response/forensics firm
+        or an individual accountable for security within that organization,
+        to provide sufficient assurance that it is ready to be reconnected
+        and to resume normal operations.
+
+      actions:
+        - seq: 1
+          action: "Review TPSP attestation"
+          owner: "SOC Lead + TPRM Lead"
+          priority: CRITICAL
+          category: third-party
+          details: >
+            Per SIFMA, the attestation should be signed by the TPSP's
+            IR firm or an individual accountable for security. Review it
+            against the Bank's reconnection prerequisites.
+          attestation_review_checklist:
+            - "Attestation is signed by appropriate authority (IR firm or accountable security officer)"
+            - "Signee has appropriate seniority and technical proficiency"
+            - "Threat actor confirmed removed from all environments"
+            - "Containment confirmed successful"
+            - "Key systems and data stores recovered to pre-infection state"
+            - "Integrity tests performed on services, applications, systems, backups, and network"
+            - "Root cause analysis completed and shared"
+            - "Infection vector identified and remediated"
+            - "Security uplifts implemented based on root cause analysis"
+            - "Compromise assessment summary report provided"
+            - "Lessons learned and planned enhancements documented"
+            - "Any incomplete recovery items explicitly called out"
+            - "IOCs and TTPs explicitly shared with all impacted organizations"
+          sifma_reference: >
+            Phase 3 Assure: The attestation may include that the compromised
+            organisation is ready to resume normal operations, evidenced by
+            steps taken in the first two phases, including assurance that
+            threat actor has been removed, containment has been successful,
+            and key systems and datastores are recovered to pre-infection
+            resilience.
+
+        - seq: 2
+          action: "Review IOCs and TTPs against Bank environment"
+          owner: "SOC Lead"
+          priority: HIGH
+          category: detection
+          details: >
+            With the full IOC/TTP package from the TPSP attestation,
+            perform a final comprehensive sweep of the Bank environment.
+          checklist:
+            - "Deploy any new IOCs received with the attestation"
+            - "Perform final IOC sweep across all log sources"
+            - "Validate that no Bank systems were compromised during exposure window"
+            - "Confirm all previously deployed IOC rules are still active"
+            - "Document sweep results (positive and negative findings)"
+          sifma_reference: >
+            Phase 3 Assure: "Organizations reconnecting to the compromised
+            organization should be prepared to review any IOCs, TTPs received
+            from the compromised organization as part of their own assurance
+            activities."
+
+        - seq: 3
+          action: "Prepare cybersecurity risk assessment for reconnection"
+          owner: "SOC Lead"
+          priority: HIGH
+          category: decision
+          details: >
+            Prepare a formal risk assessment for the business line owner
+            to support the reconnection decision. Per SIFMA, the cybersecurity
+            function assesses residual risk; the accountable business makes
+            the reconnection decision.
+          assessment_elements:
+            - "Residual cybersecurity risk rating (Critical / High / Medium / Low)"
+            - "Summary of Bank threat hunt findings"
+            - "Assessment of TPSP attestation completeness and credibility"
+            - "Identified gaps or concerns in TPSP remediation"
+            - "Recommended monitoring posture for reconnection"
+            - "Recommended reconnection approach (full, phased, limited)"
+            - "Conditions or restrictions on reconnection"
+
+        - seq: 4
+          action: "Make reconnection decision"
+          owner: "Business Line Owner (with IC and SOC input)"
+          priority: CRITICAL
+          category: decision
+          details: >
+            Per SIFMA: "The role of the accountable business is to assess
+            business, banking and financial services, and market impacts and
+            ultimately make the decision on whether to disconnect from or
+            reconnect to a compromised organisation, taking into account the
+            cyber risk as articulated by the client organisation's
+            cybersecurity function."
+          decision_options:
+            - option: "Approve reconnection (phased)"
+              trigger: "Attestation satisfactory, no Bank compromise found, acceptable residual risk"
+            - option: "Approve reconnection (full)"
+              trigger: "High confidence in TPSP remediation, low residual risk"
+            - option: "Defer reconnection"
+              trigger: "Attestation incomplete, outstanding concerns, or pending forensic report"
+            - option: "Reject reconnection"
+              trigger: "Unacceptable residual risk, inadequate TPSP remediation, loss of confidence"
+          ir_assist_tracking:
+            log_to: "decisions.jsonl"
+            required_fields:
+              - "decision"
+              - "rationale"
+              - "risk_level"
+              - "conditions"
+
+      decision_gate:
+        name: "Reconnection approved with conditions"
+        criteria:
+          - "TPSP attestation received and reviewed"
+          - "Final IOC sweep complete — no Bank compromise"
+          - "Cybersecurity risk assessment delivered to business"
+          - "Reconnection decision made and documented"
+          - "Reconnection conditions and monitoring plan defined"
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 5: RECONNECT
+    # ══════════════════════════════════════════════════════════════════════════
+    #
+    # Timeline: Days 14–60+
+    # IR Phase: Recovery
+    # SIFMA Alignment: Phase 4 (Reconnect)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    - phase: 5
+      name: "Reconnect"
+      ir_phase: "Recovery"
+      sifma_alignment: "Phase 4 — Reconnect"
+      typical_timeline: "Days 14–60+"
+      outcome: >
+        The Bank has re-established connectivity with the TPSP in a controlled,
+        monitored manner. Test transactions have confirmed data and system
+        integrity. Activity is ramping up under heightened monitoring.
+      sifma_outcome_statement: >
+        (i) The compromised organization has reconnected to selected external
+        stakeholders and undertaken test transactions to confirm that
+        data/system integrity has been re-established.
+        (ii) Following confirmation of Reconnect (i), the compromised
+        organization has conducted additional testing and monitoring.
+
+      actions:
+        - seq: 1
+          action: "Prepare reconnection environment"
+          owner: "Network / Infrastructure Team + IAM"
+          priority: HIGH
+          category: recovery
+          details: >
+            Prepare the technical environment for reconnection. This should
+            be more restrictive than pre-incident configuration. Apply
+            lessons learned.
+          checklist:
+            - "Review and harden firewall rules before re-enabling connections"
+            - "Implement network microsegmentation for TPSP traffic"
+            - "Enable enhanced network monitoring on reconnected paths"
+            - "Provision new credentials (not re-enable old ones)"
+            - "Implement least-privilege access for all TPSP accounts"
+            - "Enable detailed logging on all TPSP-connected systems"
+            - "Prepare rollback plan if reconnection fails or triggers alerts"
+
+        - seq: 2
+          action: "Execute phased reconnection"
+          owner: "Network / Infrastructure Team"
+          priority: HIGH
+          category: recovery
+          sifma_reference: >
+            Phase 4 Reconnect: "Full connectivity with key stakeholders
+            should be re-established using a phased approach."
+          reconnection_sequence:
+            - step: 1
+              name: "Test environment connectivity"
+              description: "Establish connectivity in test/UAT first. Validate data exchange."
+            - step: 2
+              name: "Low-value production test"
+              description: >
+                Per SIFMA: "Make low-value test transactions with key
+                stakeholders. Tests should replicate the range and behaviour
+                of data expected in business-as-usual." Use current dates
+                only (no future-dated transactions).
+            - step: 3
+              name: "Monitored production ramp-up"
+              description: >
+                Gradually increase transaction volume under heightened
+                monitoring. Validate transactions are handled normally
+                at each step.
+            - step: 4
+              name: "Full production restoration"
+              description: >
+                Restore full transaction volume and normal operations.
+                Maintain heightened monitoring for agreed period.
+
+        - seq: 3
+          action: "Reconcile data and transactions"
+          owner: "Business Line Owner + Operations"
+          priority: HIGH
+          category: recovery
+          details: >
+            Reconcile any data or transaction discrepancies from the
+            disconnection period.
+          checklist:
+            - "Reconcile corrupt or incomplete transactions"
+            - "Confirm mismatches on pending and completed transactions"
+            - "Identify and resolve inflight/future-dated transactions"
+            - "Resolve any liquidity concerns from the disconnection period"
+            - "Validate data integrity post-reconnection"
+
+        - seq: 4
+          action: "Maintain heightened monitoring"
+          owner: "SOC Lead"
+          priority: HIGH
+          category: detection
+          details: >
+            Per SIFMA: "Undertake heightened transaction monitoring across
+            all relevant organisations for an agreed period."
+          checklist:
+            - "Enhanced SIEM alerting on TPSP-connected systems (minimum 30 days)"
+            - "Daily review of TPSP traffic patterns for anomalies"
+            - "Continued threat hunting (weekly sessions minimum)"
+            - "Monitor for re-compromise indicators"
+            - "Maintain IOC detection rules indefinitely"
+
+      decision_gate:
+        name: "Reconnection validated — normal operations approach"
+        criteria:
+          - "Test transactions successful in test and production"
+          - "Data and transaction reconciliation complete"
+          - "No anomalies detected during monitored ramp-up"
+          - "Heightened monitoring in place for agreed period"
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PHASE 6: RECOVER AND REVIEW
+    # ══════════════════════════════════════════════════════════════════════════
+    #
+    # Timeline: Days 30–90+
+    # IR Phase: Post-Incident
+    # SIFMA Alignment: Phase 5 (Recover)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    - phase: 6
+      name: "Recover and Review"
+      ir_phase: "Post-Incident"
+      sifma_alignment: "Phase 5 — Recover"
+      typical_timeline: "Days 30–90+"
+      outcome: >
+        The Bank has fully restored normal operations with the TPSP.
+        A post-incident review has been conducted and lessons learned
+        have been incorporated into the Bank's incident response program,
+        TPRM program, and this playbook.
+      sifma_outcome_statement: >
+        The compromised organization has fully recovered and restored
+        affected services. A plan has been coordinated with external
+        stakeholders for the phased standing down of incident response
+        processes and engagement to return to normal operations / BAU.
+
+      actions:
+        - seq: 1
+          action: "Remove emergency barriers and restore normal access"
+          owner: "Network / IAM / Operations"
+          priority: MEDIUM
+          category: recovery
+          details: >
+            Per SIFMA Phase 5: "Client organizations have removed remaining
+            barriers to the compromised organization. Isolation mechanisms
+            are reset." This should be deliberate, not rushed.
+          checklist:
+            - "Transition from emergency firewall rules to permanent improved rules"
+            - "Remove temporary microsegmentation (or formalize as permanent)"
+            - "Restore TPSP access levels to appropriate (not necessarily pre-incident) levels"
+            - "Close out business continuity workarounds"
+            - "Reset isolation mechanisms"
+
+        - seq: 2
+          action: "Stand down incident response"
+          owner: "Incident Commander"
+          priority: MEDIUM
+          category: communication
+          details: >
+            Formal transition from incident response to business as usual.
+            This should be a deliberate decision, not a gradual fade.
+          checklist:
+            - "Confirm all action items complete or formally deferred"
+            - "Confirm regulatory notifications complete"
+            - "Issue internal communication: incident closed"
+            - "Issue external communication to stakeholders as appropriate"
+            - "Transition monitoring from incident posture to BAU (with improvements)"
+            - "Close incident in IR-ASSIST (advance_phase to Closed)"
+
+        - seq: 3
+          action: "Conduct post-incident review"
+          owner: "Incident Commander"
+          priority: HIGH
+          category: compliance
+          details: >
+            Formal post-incident review with all involved parties.
+            Focus on what worked, what didn't, and what changes are needed.
+          review_topics:
+            - "Detection: How quickly was the alert received and validated?"
+            - "Connection inventory: Was the inventory complete? Were there surprises?"
+            - "Disconnection: How quickly was disconnection executed?"
+            - "Access revocation: Were all access points identified? Any gaps?"
+            - "IOC deployment: How quickly were IOCs received and deployed?"
+            - "Threat hunting: Was the scope adequate? Any findings?"
+            - "TPSP communication: Was the TPSP cooperative and timely?"
+            - "Regulatory notifications: Were timelines met?"
+            - "Business impact: Were workarounds adequate?"
+            - "Reconnection: Was the phased approach effective?"
+            - "IR-ASSIST: Did the tooling support the process effectively?"
+
+        - seq: 4
+          action: "Update programs and playbooks"
+          owner: "Incident Commander + TPRM"
+          priority: HIGH
+          category: compliance
+          details: >
+            Incorporate lessons learned into the Bank's programs.
+          checklist:
+            - "Update this playbook based on lessons learned"
+            - "Update TPRM risk assessment for the affected TPSP"
+            - "Update TPSP contract terms if gaps were identified"
+            - "Update Bank's connection inventory procedures"
+            - "Update detection rules based on new TTPs"
+            - "Brief TPRM team on lessons for other vendor relationships"
+            - "Prepare Board-level incident summary report"
+            - "Schedule tabletop exercise based on this scenario"
+
+        - seq: 5
+          action: "Review TPSP forensic report (when available)"
+          owner: "SOC Lead + TPRM"
+          priority: MEDIUM
+          category: third-party
+          details: >
+            Per SIFMA: "The forensics report is typically the result of a
+            more extended process and is not available during the assurance
+            phase." Review it when available for additional lessons learned.
+          checklist:
+            - "Review full forensic report from TPSP IR firm"
+            - "Extract any additional IOCs or TTPs"
+            - "Validate Bank's threat hunt findings against forensic timeline"
+            - "Assess whether any Bank exposure was missed"
+            - "Update MITRE ATT&CK mapping with forensic findings"
+            - "Archive forensic report in incident record"
+
+      decision_gate:
+        name: "Incident closed"
+        criteria:
+          - "Normal operations restored"
+          - "Post-incident review completed"
+          - "Lessons learned documented and incorporated"
+          - "Board report delivered"
+          - "Incident formally closed in IR-ASSIST"
+          - "Monitoring returned to BAU (with improvements)"
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # DATA PROTECTION AND EXIT PROCEDURES
+  # ══════════════════════════════════════════════════════════════════════════
+  #
+  # These procedures apply when the incident leads to termination of the
+  # TPSP relationship, or when data protection actions are required
+  # regardless of whether the relationship continues.
+  # ══════════════════════════════════════════════════════════════════════════
+
+  data_protection_procedures:
+    title: "TPSP Data Protection and Exit Requirements"
+    regulatory_reference: "NYDFS 23 NYCRR 500.7 / 500.11"
+    trigger: >
+      Activated when the TPSP incident involves potential data exposure,
+      or when the Bank decides to terminate the TPSP relationship as a
+      result of the incident.
+
+    actions:
+      - action: "Require certification of NPI destruction or secure return"
+        owner: "TPRM + Legal"
+        details: >
+          Covered Entities generally should require certification of
+          destruction of NPI, secure return of data to the Covered Entity,
+          or migration of data to another TPSP or internal environment.
+        checklist:
+          - "Request written certification of data destruction from TPSP"
+          - "Verify deletion of snapshots, backups, and cached datasets from TPSP systems"
+          - "Confirm TPSP access to shared resources is fully revoked"
+          - "If data return is chosen, validate integrity of returned data"
+          - "If data migration is chosen, coordinate with new TPSP or internal team"
+          - "Retain certification documentation in incident record"
+
+      - action: "Audit for residual access points"
+        owner: "IAM + Network Team"
+        details: >
+          Give special attention to residual or unmonitored access points
+          that may fall outside routine access provisioning systems. Access
+          points that became redundant during the TPSP relationship should
+          be eliminated.
+        checklist:
+          - "Audit all systems for residual TPSP access"
+          - "Check for legacy service accounts, API keys, or certificates"
+          - "Review cloud IAM for residual cross-account access"
+          - "Check for TPSP-installed agents or software"
+          - "Verify no TPSP DNS delegations remain"
+          - "Document and remove all residual access"
+
+  # ══════════════════════════════════════════════════════════════════════════
+  # IR-ASSIST INTEGRATION
+  # ══════════════════════════════════════════════════════════════════════════
+
+  ir_assist_integration:
+    description: >
+      This playbook is designed to be used alongside IR-ASSIST. The following
+      mapping shows how playbook actions map to IR-ASSIST modules.
+
+    module_mapping:
+      incident.py:
+        - "create_incident(is_third_party=True) — Phase 0, Action 2"
+        - "advance_phase() — at each phase gate"
+        - "update_incident() — TPSP status, SIFMA phase tracking"
+      timeline.py:
+        - "add_entry() — every action, decision, and communication"
+      decisions.py:
+        - "log_decision() — disconnection, reconnection, regulatory notifications"
+      ioc.py:
+        - "add_ioc() — Phase 1, Action 4 (IOC collection)"
+        - "update_ioc_status() — as IOCs are blocked, resolved, or marked false positive"
+      actions.py:
+        - "add_action() — every checklist item assigned to an owner"
+        - "complete_action() — as items are completed"
+      mitre.py:
+        - "add_technique() — Phase 2, Action 2 (ATT&CK mapping)"
+      diagrams.py:
+        - "generate_third_party_flow() — SIFMA phase progress visualization"
+        - "generate_attack_flow() — ATT&CK technique flow"
+        - "generate_all_diagrams() — dashboard refresh"
+      dashboard.py:
+        - "generate_dashboard() — stakeholder status sharing"
+      gemini_exchange.py:
+        - "create_analysis_request() — hypothesis generation, gap analysis"
+
+    sifma_phase_tracking:
+      description: >
+        IR-ASSIST tracks SIFMA phase progress in the incident record.
+        Update via: update_incident(incident_id, third_party={sifma_phase: "Phase X - Name"})
+      phases:
+        - code: "Phase 0 - Detection"
+          playbook_phase: 0
+        - code: "Phase 1 - Assess"
+          playbook_phase: 2
+        - code: "Phase 2 - Remediate"
+          playbook_phase: 3
+        - code: "Phase 3 - Assure"
+          playbook_phase: 4
+        - code: "Phase 4 - Reconnect"
+          playbook_phase: 5
+        - code: "Phase 5 - Recover"
+          playbook_phase: 6
