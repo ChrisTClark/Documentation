@@ -1,0 +1,1563 @@
+playbook:
+  id: IR-001
+  title: IR-ASSIST Incident Response Playbook
+  description: >
+    Standardized procedures for responding to cybersecurity incidents.
+    Optimized for banking environments with enterprise-scale infrastructure
+    including datacenters, retail branches, cloud platforms, ATMs, and extensive endpoint environments.
+  classification: Internal Use
+  owner: "[PLACEHOLDER: Insert owner]"
+  version: "1.0"
+  last_updated: February 2026
+
+  overview:
+    narrative: |
+      This playbook provides standardized procedures for responding to cybersecurity incidents.
+      It is designed for use with IR-ASSIST and optimized for banking environments with enterprise-scale infrastructure including datacenters, retail branches, cloud platforms, ATMs, and extensive endpoint environments.
+    core_principle:
+      quote: "Too fast for humans, too consequential for machines."
+      allocation:
+        machine_handles:
+          - rapid information processing
+          - pattern matching
+          - playbook execution
+        humans_handle:
+          - strategic decisions
+          - novel situations
+          - stakeholder tradeoffs
+    use_when:
+      inclusions:
+        - Confirmed malicious cyber activity
+        - Lateral movement, credential access, or data exfiltration
+        - Network intrusions involving multiple systems or users
+        - Compromised administrator or privileged accounts
+        - Any incident where major impact has not been ruled out
+    do_not_use_when:
+      exclusions:
+        - Routine security events (single phishing click with no compromise)
+        - Accidental data spills with no malicious actor
+        - Isolated commodity malware on a single endpoint (unless escalation criteria met)
+
+  lifecycle:
+    diagram:
+      type: ascii
+      content: |
+        ┌─────────────────────────────────────────────────────────────────────────────┐
+        │                        INCIDENT RESPONSE LIFECYCLE                          │
+        ├─────────────────────────────────────────────────────────────────────────────┤
+        │                                                                             │
+        │   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐              │
+        │   │PREPARATION│───│IDENTIFI- │───▶  TRIAGE   ───▶│INVESTIGA-│              │
+        │   │(Ongoing)  │   │ CATION   │    │          │    │  TION    │              │
+        │   └──────────┘    └──────────┘    └──────────┘    └────┬─────┘              │
+        │                                                        │                    │
+        │                                                        ▼                    │
+        │   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐              │
+        │   │  POST-   │◀─── RECOVERY  ◀───│ERADICA-  │◀──│ CONTAIN- │              │
+        │   │ INCIDENT │    │          │    │  TION    │    │  MENT    │              │
+        │   └──────────┘    └──────────┘    └──────────┘    └──────────┘              │
+        │                                                                             │
+        └─────────────────────────────────────────────────────────────────────────────┘
+    phases_order:
+      - Preparation
+      - Identification
+      - Triage
+      - Investigation
+      - Containment
+      - Eradication
+      - Recovery
+      - Post-Incident
+    ui_phase_indicator:
+      supported: true
+      rules:
+        highlight_current_phase: true
+        show_completed_phases: true
+        show_pending_phases: true
+        show_progress_within_phase: true
+      status_styles:
+        complete: { color: "#90EE90", symbol: "✓" }
+        current: { color: "#FFD700", symbol: "▶" }
+        pending: { color: "#FFFFFF", symbol: "○" }
+        blocked: { color: "#FF6B6B", symbol: "⚠" }
+      state_object_schema:
+        incident_id: "INC-2026-0001"
+        current_phase: "INVESTIGATION"
+        phases:
+          identification: { status: "complete", completed_at: "2026-02-05T10:30:00Z" }
+          triage: { status: "complete", completed_at: "2026-02-05T11:00:00Z" }
+          investigation: { status: "in_progress", started_at: "2026-02-05T11:15:00Z", checklist_progress: 0.45 }
+          containment: { status: "pending" }
+          eradication: { status: "pending" }
+          recovery: { status: "pending" }
+          post_incident: { status: "pending" }
+        current_checklist_item: "4.3 Attack Chain Mapping"
+
+  phase_definitions:
+    - name: Preparation
+      purpose: Readiness before incidents occur
+      exit_criteria:
+        - Ongoing - no exit
+      has_no_exit: true
+    - name: Identification
+      purpose: Detect and report potential incidents
+      exit_criteria:
+        - Alert validated, ticket opened, initial data gathered
+    - name: Triage
+      purpose: Validate, categorize, prioritize
+      exit_criteria:
+        - Category/priority assigned, escalation decision made
+    - name: Investigation
+      purpose: Determine scope, root cause, impact
+      exit_criteria:
+        - Full scope defined, attack chain understood, all IOCs identified
+    - name: Containment
+      purpose: Prevent further damage, isolate threat
+      exit_criteria:
+        - No new signs of compromise, adversary access removed
+    - name: Eradication
+      purpose: Remove all artifacts of compromise
+      exit_criteria:
+        - All malware/backdoors removed, vulnerabilities patched
+    - name: Recovery
+      purpose: Restore systems to normal operations
+      exit_criteria:
+        - Systems operational, monitoring confirmed, no adversary activity
+    - name: Post-Incident
+      purpose: Document, learn, improve
+      exit_criteria:
+        - Report complete, lessons captured, improvements assigned
+
+
+  incident classification:
+    Definitions:
+      - id: Event
+        description: An event is any observable occurrence that involves computing assets, including physical and virtual platforms, networks, services, and cloud environments that may be relevant to cybersecurity operations, but does not indicate a confirmed threat. Most security telemetry falls into this category. 
+        example of events: User login attempts, software update installation, application performance alert, VPN connection established.
+      - id: Adverse Cybersecurity Event
+        description: An adverse cybersecurity event is an event that might indicate potential malicious activity that requires analysis but does not necessarily imply a cybersecurity incident has occurred. It helps separate noise from signals. •	Additional analysis is often needed to determine whether adverse cybersecurity events indicate that a cybersecurity incident has occurred. 
+        example of adverse cybersecurity events: o	Detection of phishing emails that were not clicked, unauthorized access attempts that fail, increased traffic on a network possibly indicating a scanning attempt, an attempted denial of service attack which does not result in operation or service downtime. 
+      - id: Cybersecurity Incident
+        description: A cybersecurity incident is an occurrence or series of occurrences that actually or imminently jeopardizes, the confidentiality, integrity, or availability of KeyBank information or information systems, whether occurring directly on KeyBank enterprise network or at a trusted third-party provider; security policies, security procedures, or acceptable use policies. 
+        example of cybersecurity incidents: Unauthorized privileged access, data exfiltration, malware propagation, ransomware.
+
+  incident_categories:
+    categories:
+      - id: CAT 0
+        name: Exercise or Testing (Event)
+        description: Activities conducted as part of planned cybersecurity exercises, red team assessment, penetration tests, or routine security tool testing. 
+      - id: CAT 1
+        name: Unsuccessful Activity Attempted (Event or Adverse Event)
+        description: Deliberate attempts to gain unauthorized access are defeated by normal defensive mechanisms. Attacker fails to gain access (i.e., attacker attempts valid or potentially valid username and password combinations) and the activity cannot be characterized as exploratory scanning. Note - This category does not cover the "run-of-the-mill" malicious code injects that are defeated or deleted security tools.
+      - id: CAT 2
+        name: Reconnaissance (Adverse Event)
+        description: Activity that seeks to gather information used to characterize systems, applications, networks, and users that may be useful in formulating an attack. This includes activity such as mapping Key networks, devices and applications, interconnectivity, and their users. This activity does not directly result in a compromise. Specific examples: scanning/probing, endpoint enumeration, parameter tampering (if passive), header probing, and rate controls / bot manager testing.
+      - id: CAT 3
+        name: Non-Compliance Activity (Event or Adverse Event)
+        description: Activity that potentially exposes Key to increased risk because of the action or inaction of authorized users, without malicious intent. This includes administrative and user actions such as failure to apply security patches, connections across security domains, installation of vulnerable applications, and other breaches of existing policy. This could include activities from vendors / third parties. 
+      - id: CAT 4
+        name: Denial of Service (Incident)
+        description: Sustained DoS attack causing site outages or service degradation that impacts internal operations or external customers. 
+      - id: CAT 5
+        name: Malicious Logic (Incident)
+        description: Installation of software designed and/or deployed by adversaries with malicious intentions for the purpose of gaining access to resources or information without the consent or knowledge of the user, e.g. RAT installed and beaconing to C2. This only includes malicious code that does not provide remote interactive control of the compromised system. Malicious code that has allowed interactive access should be categorized as root-level intrusion, or user-level intrusion.  
+      - id: CAT 6
+        name: User-Level Intrusion (Incident)
+        description: Unauthorized non-privileged access to a system. Non-privileged access, often referred to as user level access, provides restricted access to the system based on the privileges granted to the user. This includes unauthorized access to information or unauthorized access to account credentials that could be used to perform user functions such as accessing Web applications, Web portals, or other similar information resources. If the system is compromised with malicious code that provides remote interactive control, it will be reported in this category.
+      - id: CAT 7
+        name: Root-Level Intrusion (Incident)
+        description: "Unauthorized privileged access to a system. Privileged access, often referred to as administrative or root access, provides unrestricted access to the system. This category includes unauthorized access to information or unauthorized access to account credentials that could be used to perform administrative functions (e.g., domain administrator). If the system is compromised with malicious code that provides remote interactive control, it will be reported in this category.
+      - id: CAT 8
+        name: Generative AI Compromise (Incident)
+        description: Activity involving adversarial manipulation or exploitation of an enterprise GenAI system—such as a large language model (LLM), AI agent, or RAG system—resulting in unauthorized disclosure, system manipulation, or operational disruption. This includes prompt injection attacks, model tampering, or abuse of AI interfaces to extract sensitive data or perform unintended actions. These incidents do not require traditional system intrusion and may occur through authorized interfaces misused by threat actors.
+  
+  severity_levels:
+    - severity: Low
+      type: "adverse event or incident"
+      explanation: 
+        Routine or low-sophistication activity that is unlikely to escalate
+        or cause harm if addressed with standard controls.
+      examples:
+        - "Password resets: Routine changes due to suspected credential compromise."
+        - "Email deletions: Removal of unsolicited or potentially harmful emails."
+        - "Proxy blocks: Blocking access to non-business-related websites."
+        - "Machine reimaging for minor issues: Restoring a workstation to a clean state after detecting low-level malware."
+        - "Basic DDoS filtering: Mitigating low-volume denial-of-service attempts without service disruption."
+        - "Phishing email exposure: Employees or customers expose credentials to threat actor yet does not result in successful fraudulent activity."
+        - "Isolated machine compromise: A single computer infected with malware, contained without wider spread."
+        - "Unauthorized cloud storage access attempt: Unsuccessful attempt to access corporate data in the cloud."
+        - "Third-party vendor misconfiguration: A vendor's misconfiguration exposes non-sensitive data but is promptly corrected."
+
+    - severity: Medium
+      type: "incident"
+      explanation: 
+        Malicious or unauthorized activity with limited scope.
+        May require targeted response and monitoring but remains
+        within manageable impact boundaries.
+      examples:
+        - "Malware propagating laterally (>1 host) or privilege escalation of compromised credentials."
+        - "Public-facing web application downtime: Temporary unavailability of a website due to a cyber security incident."
+        - "Short-lived, partial system outages: Disruption affecting certain services or departments, causing operational delays."
+        - "Successful phishing attack leading to financial fraud: An employee is deceived into transferring funds to a fraudulent account."
+        - "Vendor breach exposing PII: A third-party vendor's security breach leads to limited exposure of customer personally identifiable information (PII)."
+        - "Prompt injection into an internal LLM: Limited data exposure or unauthorized responses, contained quickly."
+
+    - severity: High
+      type: "incident"
+      explanation: 
+        Sophisticated activity indicating a likely attempt to compromise
+        critical systems or exfiltrate sensitive data.
+        Requires immediate investigation and containment.
+      examples:
+        - "Theft of non-critical data: Unauthorized access resulting in the exfiltration of internal documents not essential to operations."
+        - "Long-term, partial system outages: Disruption affecting certain services or departments, causing operational delays."
+        - "Limited exposure of internal sensitive data: Confidential information is accessed but not widely disseminated."
+        - "Compromise of cloud-based application: Unauthorized access to a cloud-hosted service resulting in data manipulation."
+        - "Vendor breach exposing PII: A third-party vendor's security breach leads to significant exposure of customer personally identifiable information (PII)."
+        - "Third-party software supply chain attack: An attacker compromises a widely used vendor platform, inserting malicious code or capturing credentials that impacts multiple customers."
+        - "Adversary manipulates a GenAI system: Used to extract sensitive internal data or perform unauthorized actions across multiple business units."
+
+  cyber_defense_incident_response_triggers:
+    purpose:
+      Clear and well-defined incident triggers ensure timely activation of the
+      Cyber Defense Incident Response process. These triggers act as the
+      authoritative signal that a cybersecurity adverse event has crossed a
+      threshold requiring coordinated response across Cyber Defense.
+    objectives:
+      - Eliminate ambiguity around when to engage Cyber Defense
+      - Clarify roles and responsibilities
+      - Ensure early mobilization of appropriate stakeholders
+      - Improve situational awareness
+      - Align response with regulatory and operational expectations
+      - Ensure consistency and predictability in incident response
+
+    activation_rule:
+      When any of the defined triggers are observed or suspected, the Cyber Defense
+      Incident Response Team will convene to assess the situation and determine
+      response actions. The appropriate playbook or runbook is activated to ensure
+      a swift and standardized response.
+
+    formal_triggers:
+      - id: TR-01
+        name: Malware Propagation
+        description: Malware spreading laterally, indicating potential outbreak conditions.
+        example: >
+          Laterally spreading malware suggesting a widespread infection rather
+          than an isolated endpoint compromise.
+
+      - id: TR-02
+        name: Ransomware Detection
+        description: Detection of ransomware activity or associated extortion behavior.
+        example: >
+          Ransomware encryption attempts, evidence of data exfiltration, or receipt
+          of ransom demands.
+
+      - id: TR-03
+        name: Denial of Service (DoS) with Operational Impact
+        description: Sustained DoS activity causing disruption to business operations.
+        example: >
+          Prolonged DoS attack resulting in site outages or service degradation
+          impacting internal operations or external customers.
+
+      - id: TR-04
+        name: Unauthorized Privileged Access or Escalation
+        description: Unexpected administrative access or privilege escalation events.
+        example: >
+          Alerts indicating unexpected admin login activity or privilege escalation,
+          suggesting a compromised account or insider threat.
+
+      - id: TR-05
+        name: Indicators of Data Exfiltration
+        description: Evidence suggesting unauthorized transfer of data out of the environment.
+        example: >
+          Large outbound data transfers or unusual network traffic patterns that
+          indicate possible data theft.
+
+      - id: TR-06
+        name: Suspected Compromise of Major Technology or Productivity Tools
+        description: Unauthorized changes affecting critical enterprise tools or platforms.
+        example: >
+          Unauthorized modifications to major technology or productivity tools as
+          referenced in Technology Incident Management process guides.
+
+      - id: TR-07
+        name: Critical Exposed Vulnerability
+        description: Actively exploited critical vulnerabilities affecting the organization.
+        example: >
+          A critical remote code execution vulnerability actively exploited in the
+          wild where the organization operates an affected internet-facing application.
+
+      - id: TR-08
+        name: Correlated Alerts Across Multiple Sources
+        description: Multiple security tools indicating coordinated malicious activity.
+        example: >
+          WAF, SIEM, XDR, or Prisma alerts collectively indicating a coordinated attack,
+          such as simultaneous credential stuffing and anomalous API activity.
+
+      - id: TR-09
+        name: Directed Threat Intelligence
+        description: Credible intelligence indicating imminent or ongoing targeting.
+        example: >
+          Reliable intelligence indicating the organization is a named target of
+          an imminent attack or active adversary campaign.
+
+      - id: TR-10
+        name: Third-Party or Supply-Chain Incident
+        description: Security incidents involving vendors or partners with direct access.
+        example: >
+          Notification that a key vendor or partner with direct access to systems
+          or data has been breached.
+        reference: "Third Party Incidents, Category C"
+
+      - id: TR-11
+        name: Cloud Infrastructure Compromise
+        description: Unauthorized activity within cloud environments.
+        example: >
+          Unauthorized API calls, privilege escalation, or data manipulation in
+          cloud workloads that could lead to data exposure or service disruption.
+
+      - id: TR-12
+        name: Sophisticated Social Engineering
+        description: High-impact social engineering campaigns resulting in widespread compromise.
+        example: >
+          Spear phishing, vishing, or SMS phishing campaigns resulting in compromise
+          of more than 100 accounts, loss of sensitive data, or enabling deeper infiltration.
+
+      - id: TR-13
+        name: Generative AI Compromise
+        description: Exploitation of enterprise GenAI systems leading to unauthorized outcomes.
+        example: >
+          Prompt injection or crafted queries used against enterprise LLM or RAG
+          systems to extract sensitive internal data, bypass access controls, or
+          disrupt GenAI services.
+
+    insider_risk_note:
+      description: >
+        Cyber incident response triggers may result from actions taken by an employee
+        or contractor. In such cases, Cyber Defense response actions remain applicable,
+        and the Insider Threat Team will be engaged.
+      additional_engagements:
+        - Human Resources (HR)
+        - Legal
+        - Other relevant departments
+      reference: >
+        Insider threat runbooks are documented in the Enterprise Cyber Incident
+        Response Plan.
+
+  roles_and_responsibilities:
+    scope:
+      purpose: >
+        Support effective execution of incident response at the Cyber Defense level
+        for medium or higher impact incidents.
+      applicable_incident_categories: 5, 6, 7, 8
+      example_incident_types:
+        - Ransomware
+        - Malware propagation
+        - Cloud compromise
+        - Data exfiltration
+      activation_trigger: >
+        Activation of the Cyber Defense incident response playbook.
+
+    importance:
+      - benefit: Reduce confusion and speed response
+        description: Eliminate hesitation and duplication of effort.
+      - benefit: Enable effective collaboration
+        description: Establish common understanding to improve communication and reduce friction.
+      - benefit: Drive predictability
+        description: Reduce uncertainty and increase confidence during crises.
+      - benefit: Empower teams with clear ownership
+        description: Improves execution efficiency.
+      - benefit: Support continuous improvement
+        description: Establishes a baseline for identifying gaps and driving ongoing improvements.
+
+    cyber_defense_roles:
+      cyber_defense_roles:
+      - role: Cyber Defense Incident Response Team (CDIRP)
+        responsibilities:
+        - Convene upon formal cybersecurity incident activation to establish unified
+          Cyber Defense coordination and execute the full incident response lifecycle,
+          including evaluation, containment, eradication, recovery, and post-incident activities.
+        - Maintain shared situational awareness across Cyber Defense leadership and
+          engaged specialists, including current status, confirmed facts, assumptions,
+          risks, and key decision points.
+        - Coordinate execution across Cyber Defense functions and specialists as needed,
+          ensuring responsibilities are clearly assigned and minimizing duplication
+          or gaps in coverage.
+        - Establish and enforce incident documentation standards, including consistent
+          time-stamping practices and maintaining a clear record of actions, decisions,
+          and investigative findings.
+        - Ensure evidence preservation and handling expectations are followed, including
+          protection of sensitive data, integrity considerations, and retention of
+          artifacts required for investigation and follow-on actions.
+        - Oversee creation and maintenance of core incident artifacts, such as an
+          attacker timeline based on evidentiary facts, indicator tracking, and clear
+          distinction between suspected and validated malicious activity.
+        - Drive investigation and remediation prioritization and execution cadence,
+          including iterative investigative cycles and adjustment of scope as new
+          indicators or impacts are identified.
+        - Coordinate early remediation planning and response posturing to support
+          timely and controlled containment and eradication while balancing investigative needs.
+
+      - role: Cyber Incident Coordinator
+        responsibilities:
+          - Overall coordination of Cyber Defense incident response for category 5 through 8,
+            medium impact or higher incidents.
+          - Ensure alignment between CTR, Cyber Threat Management, Vulnerability Management,
+            Application & Cloud Security, and WAF teams.
+          - Coordinate with ESS/CIS leadership for incident declaration and disconnect/reconnect decisions.
+          - Coordinate with incident response retainer services when applicable.
+          - Elevate to Corporate Incident Response (CIR) when necessary.
+          - Provide updates to ESS, CIS, and Cyber Defense leadership.
+          - Lead post-incident review and handover of improvements to CIS teams,
+            typically via the CIS Working Group.
+        key_actions:
+          - Activate and coordinate Cyber Defense response for category 5 through 8 incidents.
+          - Ensure rapid containment, eradication, and recovery strategies.
+          - Communicate incident status to leadership.
+          - Lead post-incident analysis to prevent recurrence.
+
+      - role: Cyber Threat Response (CTR)
+        responsibilities:
+          - Act as first responders to detect, analyze, and contain threats.
+          - Monitor security tools and logs for malicious activity.
+          - Work with threat intelligence, forensics, and incident response teams
+            to provide real-time data.
+          - Perform phishing analysis and remediation.
+          - Conduct email security analysis and remediation.
+        key_actions:
+          - Monitor alerts and correlate logs from SIEM, CSPM, WAF, and firewall tools.
+          - Identify and escalate incidents based on category and impact.
+          - Perform initial containment actions (e.g., isolate endpoints, block IOCs).
+          - Work with forensics to validate indicators of compromise (IOCs).
+          - Investigate phishing campaigns targeting employees or customers.
+          - Coordinate phishing takedowns with external partners and threat intelligence.
+          - Analyze Proofpoint logs for email-based threats, BEC attempts, and phishing trends.
+          - Implement email filtering rules and DMARC.
+          - Provide continuous monitoring for signs of ongoing compromise.
+
+      - role: Forensics & Digital Investigations
+        responsibilities:
+          - Collect, analyze, and preserve digital evidence.
+          - Determine attack vectors, timelines, and adversary techniques.
+          - Support containment and eradication by identifying persistence mechanisms.
+        key_actions:
+          - Capture and analyze forensic images (memory, disk, logs).
+          - Conduct root cause analysis in coordination with other teams.
+          - Identify malware, backdoors, and compromised credentials.
+          - Support threat intelligence with indicators and attribution efforts.
+          - Validate eradication efforts to confirm no remaining threat actors.
+          - Preserve evidence for legal and compliance purposes.
+
+      - role: Cyber Threat Intelligence (CTI) & Threat Hunting
+        responsibilities:
+          - Provide intelligence-driven response to anticipate adversary actions.
+          - Identify threat actor tactics, techniques, and procedures (TTPs).
+          - Enhance MITRE ATT&CK mappings, IOCs, and detection rules.
+        key_actions:
+          - Attempt to identify threat actors behind incidents.
+          - Provide IOC and TTP intelligence to CTR, Forensics, and IR leadership.
+          - Predict adversary next steps to inform containment strategies.
+          - Monitor dark web, FS-ISAC, and external intelligence feeds.
+          - Conduct proactive threat hunts to detect hidden compromises.
+          - Analyze web proxy logs for malicious web activity, C2 traffic, or phishing attempts.
+          - Enforce web traffic security policies and coordinate block requests with proxy teams.
+        threat_hunting_specific_actions:
+          - Perform hypothesis-driven threat hunts based on TTPs.
+          - Use log data, behavioral analytics, and threat intelligence to uncover hidden attacks.
+          - Search for persistence, lateral movement, and C2 communications.
+          - Assist CTR in identifying stealthy malware, unauthorized access, and insider threats.
+          - Validate findings with forensics to ensure complete eradication.
+
+      - role: Cyber Adversary & Exposure Management (CAEM)
+        responsibilities:
+          - Research exploited vulnerabilities and recommend remediation strategies.
+          - Track and manage remediation actions such as patching and configuration changes.
+        key_actions:
+          - Identify exploited vulnerabilities and coordinate remediation.
+          - Prioritize patching based on threat intelligence and exploitability.
+          - Ensure compensating controls when patches are unavailable.
+          - Conduct post-incident vulnerability scans to confirm remediation effectiveness.
+
+      - role: Cyber Application & Cloud Defense
+        responsibilities:
+          - Ensure security of web applications, APIs, and cloud environments during incidents.
+          - Provide input to recovery of compromised cloud assets with Technology Incident Management.
+        key_actions:
+          - Identify vulnerabilities in cloud environments and applications.
+          - Work with CTR and forensics to isolate compromised cloud workloads.
+          - Analyze GCP, Azure, and AWS logs for lateral movement.
+          - Secure and revalidate IAM, access controls, and network segmentation.
+          - Enforce API security measures and prevent unauthorized access.
+
+    enterprise_support_functions:
+      - function: Corporate Incident Response (CIR) & Technology Incident Management (TIM)
+        role: >
+          Lead enterprise-wide coordination for high-impact incidents with operational,
+          regulatory, or reputational consequences.
+        key_actions:
+          - Oversee critical incidents and escalation.
+          - Coordinate cross-functional response and recovery.
+          - Interface with executive leadership, legal, and regulators.
+          - Oversee incident communications and stakeholder engagement.
+
+      - function: Cloud Network Services (CNS)
+        role: Ensure security and resilience of cloud network infrastructure.
+        key_actions:
+          - Monitor cloud network traffic for anomalies.
+          - Enforce segmentation and access controls.
+          - Isolate affected cloud workloads during containment.
+          - Assist in recovery and validation post-incident.
+
+      - function: Windows Server Management (WSM)
+        role: Maintain and secure Windows server environments.
+        key_actions:
+          - Validate server integrity and patch status.
+          - Support forensic imaging and reimaging.
+          - Disable affected services or accounts during containment.
+          - Coordinate recovery planning with CIR.
+
+      - function: End User Team (EUT) – Microsoft 365
+        role: Manage and secure end-user platforms.
+        key_actions:
+          - Support investigation of M365 applications.
+          - Disable compromised accounts.
+          - Assist in restoring user access and validating MFA configurations.
+
+      - function: Security Architecture & Engineering
+        role: >
+          Design, validate, and enhance security controls and address architectural weaknesses.
+        key_actions:
+          - Conduct post-incident control gap analysis.
+          - Reinforce security architecture based on lessons learned.
+          - Validate compensating controls and zero trust configurations.
+
+      - function: Web Application Firewall (WAF) Team
+        role: Monitor and manage WAF policies to block malicious web traffic.
+        key_actions:
+          - Analyze WAF logs for attack patterns.
+          - Implement and tune WAF rulesets using threat intelligence.
+          - Collaborate with CTR and CTI to block adversary infrastructure.
+          - Support containment and eradication activities.
+
+      - function: Fraud & Corporate Investigations
+        role: Lead investigations involving fraud, legal exposure, or regulatory violations.
+        key_actions:
+          - Conduct forensic interviews and evidence collection.
+          - Interface with law enforcement and regulators.
+          - Support CIR in legal and compliance communications.
+
+      - function: Third Party Security (TPS)
+        role: Manage security risks related to vendors and supply chain entities.
+        key_actions:
+          - Assess exposure and connectivity with impacted third parties.
+          - Coordinate third-party containment and mitigation actions.
+
+      - function: Data Loss Prevention (DLP)
+        role: Prevent unauthorized disclosure or exfiltration of sensitive data.
+        key_actions:
+          - Analyze DLP alerts and data transfer logs.
+          - Investigate potential data leakage incidents.
+          - Recommend and implement DLP policy updates.
+
+      - function: Insider Risk
+        role: Address threats originating from within the organization.
+        key_actions:
+          - Investigate anomalous user behavior.
+          - Coordinate with Corporate Investigations for high-risk cases.
+          - Recommend access revocation or privilege adjustments.
+          - Support post-incident insider risk reviews.
+
+    external_entities:
+      - entity: External Legal Counsel
+        role: Provide legal guidance during high-impact or sensitive incidents.
+        key_actions:
+          - Advise on regulatory and legal exposure.
+          - Review incident communications and disclosures.
+          - Coordinate with internal legal and investigations.
+          - Support law enforcement and litigation decisions.
+
+      - entity: Incident Response Retainer Service
+        role: Provide expert forensic and threat intelligence support.
+        key_actions:
+          - Assist with triage and scoping.
+          - Analyze logs, IOCs, and adversary behavior.
+          - Provide forensic support and attribution.
+          - Collaborate on containment and eradication strategies.
+          - Ensure SLA adherence and legal coordination.
+
+  priority_model:
+    alert_source_fidelity:
+      levels:
+        - name: None
+          threshold: "< 10%"
+          correlation_rule: No correlation
+        - name: Low
+          threshold: "10-35%"
+          correlation_rule: Low fidelity correlation only
+        - name: Medium
+          threshold: "35-75%"
+          correlation_rule: Multiple sources or medium fidelity
+        - name: High
+          threshold: "> 75%"
+          correlation_rule: Multiple medium+ fidelity sources
+    attack_lifecycle_priority:
+      levels:
+        - name: Low
+          attack_phases:
+            - Initial Reconnaissance
+        - name: Medium
+          attack_phases:
+            - Initial Compromise, Establish Foothold
+        - name: High
+          attack_phases:
+            - Escalate Privileges, Internal Recon, Lateral Movement, Maintain Presence, Complete Mission
+    high_value_asset_indicators:
+      levels:
+        - name: Low
+          asset_types:
+            - Standard workstations, non-critical servers
+        - name: High
+          asset_types:
+            - Executive systems, PII/PCI data systems, core banking, compliance-regulated systems
+
+  phases:
+    - name: Preparation
+      number: 1
+      purpose: Establish readiness to prevent, detect, and respond to incidents.
+      checklists:
+        - id: "1.1"
+          title: Policies and Procedures
+          items:
+            - item_id: PREP-1.1-1
+              action: Document incident response plan with escalation procedures
+            - item_id: PREP-1.1-2
+              action: Designate cyber incident coordinator (CIC)
+            - item_id: PREP-1.1-3
+              action: Identify key IR personnel and contact information
+            - item_id: PREP-1.1-4
+              action: Establish communication protocols (including out-of-band)
+            - item_id: PREP-1.1-5
+              action: Define roles, responsibilities, and decision authority
+        - id: "1.2"
+          title: Instrumentation
+          items:
+            - item_id: PREP-1.2-1
+              action: Deploy detection capabilities (SIEM, EDR, IDPS, DLP)
+            - item_id: PREP-1.2-2
+              action: Establish system and network baselines
+            - item_id: PREP-1.2-3
+              action: Configure logging and log retention per policy
+            - item_id: PREP-1.2-4
+              action: Validate sensor coverage across all environments
+        - id: "1.3"
+          title: Response Readiness
+          items:
+            - item_id: PREP-1.3-1
+              action: Train and exercise IR personnel
+            - item_id: PREP-1.3-2
+              action: Maintain IR toolkit (forensic tools, clean media)
+            - item_id: PREP-1.3-3
+              action: Establish secure evidence storage
+            - item_id: PREP-1.3-4
+              action: Test backup and recovery procedures
+            - item_id: PREP-1.3-5
+              action: Maintain threat intelligence feeds
+            - item_id: PREP-1.5-6
+              action: Maintain current network diagrams and asset inventories
+        - id: "1.4"
+          title: Communications
+          items:
+            - item_id: PREP-1.4-1
+              action: Establish out-of-band communication channels
+            - item_id: PREP-1.4-2
+              action: Document stakeholder notification procedures
+            - item_id: PREP-1.4-3
+              action: Prepare communication templates
+
+    - name: Identification
+      number: 2
+      purpose: Detect potentially adverse events and bring them to IR team attention.
+      current_phase_indicator_supported: true
+      key questions:
+        - id: KQ-1
+          question: "What can be validated quickly?
+        - id: KQ-2
+          question: "What requires more investigation?"
+        - id: KQ-3
+          question: "What requires legal analysis?"
+        - id: KQ-4
+          question: "What can be contained?
+        - id: KQ-5
+          question: "How did the attacker get in?
+        - id: KQ-6 
+          question: "How did the attacker move around?
+        - id: KQ-7
+          question: "What was the attacker's mission?"
+        - id: KQ-8
+          question: "Who performed the attack?"
+      entry_triggers:
+        - SIEM alert/offense
+        - User report (phishing, suspicious activity)
+        - Threat intelligence indicator match
+        - Third-party notification
+        - Anomaly detection
+      decision_tree:
+        type: ascii
+        content: |
+          ┌─────────────────────────────────────────────────────────────┐
+          │                    ALERT RECEIVED                           │
+          └─────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Is this a known        │
+                        │  false positive?        │
+                        └─────────────────────────┘
+                               │           │
+                              YES          NO
+                               │           │
+                               ▼           ▼
+                     ┌──────────────┐  ┌──────────────────────┐
+                     │ Document &   │  │ Gather initial data: │
+                     │ close        │  │ - Timestamp          │
+                     └──────────────┘  │ - Affected systems   │
+                                       │ - Alert source       │
+                                       │ - Initial indicators │
+                                       └──────────────────────┘
+                                                  │
+                                                  ▼
+                                       ┌──────────────────────┐
+                                       │ Open incident ticket │
+                                       │ Assign initial       │
+                                       │ category             │
+                                       └──────────────────────┘
+                                                  │
+                                                  ▼
+                                       ┌──────────────────────┐
+                                       │ PROCEED TO TRIAGE    │
+                                       └──────────────────────┘
+      checklists:
+        - id: "2.1"
+          title: Alert Receipt
+          items:
+            - item_id: ID-2.1-1
+              action: Record alert timestamp (UTC)
+            - item_id: ID-2.1-2
+              action: Identify alert source (SIEM, EDR, user report, external)
+            - item_id: ID-2.1-3
+              action: Capture raw alert data
+        - id: "2.2"
+          title: Initial Data Gathering
+          items:
+            - item_id: ID-2.2-1
+              action: Identify affected system(s) - hostname, location, usernames, registry keys, event logs, 
+            - item_id: ID-2.2-2
+              action: Identify affected user(s) if applicable
+            - item_id: ID-2.2-3
+              action: Capture initial indicators (Network-based - IPs, domains, ASN organizations, Ports, traffic content signatures, hashes, etc.) (Host-based indicators - file names, commands, usernames, registry keys, event logs)
+            - item_id: ID-2.2-4
+              action: Check for related alerts within timeframe
+        - id: "2.3"
+          title: Ticket Creation
+          items:
+            - item_id: ID-2.3-1
+              action: Open incident ticket in case management system
+            - item_id: ID-2.3-2
+              action: Assign unique incident ID
+            - item_id: ID-2.3-3
+              action: Record initial categorization (CAT 0-8)
+            - item_id: ID-2.3-4
+              action: Document initial findings
+        - id: "2.4"
+          title: Initial Notification
+          items:
+            - item_id: ID-2.4-1
+              action: Notify according to the criteria
+      exit_criteria:
+        - Alert validated as requiring investigation (not obvious false positive)
+        - Incident ticket opened with unique ID
+        - Initial data gathered and documented
+        - Appropriate personnel notified
+
+    - name: Triage
+      number: 3
+      purpose: Validate the alert, determine category and scope, decide response strategy.
+      current_phase_indicator_supported: true
+      decision_tree:
+        type: ascii
+        content: |
+          ┌─────────────────────────────────────────────────────────────┐
+          │                FROM IDENTIFICATION                          │
+          └─────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Validate: Is this a    │
+                        │  true positive?         │
+                        └─────────────────────────┘
+                               │           │
+                              NO          YES
+                               │           │
+                               ▼           │
+                     ┌──────────────┐      │
+                     │ Document as  │      │
+                     │ false positive,     │
+                     │ close ticket │      │
+                     └──────────────┘      │
+                                           ▼
+                              ┌─────────────────────────┐
+                              │  Assign Category (1-8)  │
+                              │                         │
+                              └─────────────────────────┘
+                                           │
+                                           ▼ 
+                        ┌─────────────────────────────────────┐
+                        │  Does this siutation meet a incident|
+                        | trigger or is category 5 or >?      │  
+                        └─────────────────────────────────────┘
+                               │                    │
+                              NO                   YES
+                               │                    │
+                               ▼                    ▼
+                     ┌──────────────┐    ┌─────────────────────────────┐
+                     │ Standard     │    │ Initiate formal incident    │
+                     │ investigation│    │ response and escalate to CIR│
+                     └──────────────┘    └─────────────────────────────┘
+                               │                    │
+                               └────────┬───────────┘
+                                        │
+                                        ▼
+                              ┌──────────────────────┐
+                              │ PROCEED TO           │
+                              │ INVESTIGATION        │
+                              └──────────────────────┘
+      checklists:
+        - id: "3.1"
+          title: Validation
+          items:
+            - item_id: TR-3.1-1
+              action: Verify alert is not a false positive
+            - item_id: TR-3.1-2
+              action: Correlate with threat intelligence
+            - item_id: TR-3.1-3
+              action: Check for related/correlated events
+            - item_id: TR-3.1-4
+              action: Verify affected assets exist and are in scope
+        - id: "3.2"
+          title: Categorization
+          items:
+            - item_id: TR-3.2-1
+              action: Assign incident category (CAT 1-8)
+            - item_id: TR-3.2-2
+              action: Identify attack lifecycle phase
+            - item_id: TR-3.2-3
+              action: Determine if high value assets affected
+        - id: "3.3"
+          title: Prioritization
+          items:
+            - item_id: TR-3.3-1
+              action: Assess alert source fidelity, HVA status, attack phase, and threat intel match to determine severity (L, M, H)
+        - id: "3.4"
+          title: Escalation Decision
+          items:
+            - item_id: TR-3.4-1
+              action: "If meets incident trigger and category 5 or greater - activagte Cyber Defense Incident Response Team"
+        - id: "3.5"
+          title: Resource Assignment
+          items:
+            - item_id: TR-3.5-1
+              action: Establish CDIRP with specialists as needed
+            - item_id: TR-3.5-2
+              action: Identify additional resources needed
+            - item_id: TR-3.5-3
+              action: Brief assigned personnel
+      exit_criteria:
+        - Alert validated as true positive
+        - Category assigned
+        - Severity assessed
+        - Escalation decision made
+        - Cyber Defense Incident Response Team established
+
+    - name: Investigation
+      number: 4
+      purpose: Determine full scope, root cause, attack chain, and impact of the incident.
+      current_phase_indicator_supported: true
+      key_questions:
+        - id: KQ-1
+          question: "Initial Access: How did the adversary gain entry?"
+        - id: KQ-2
+          question: "Persistence: How is the adversary maintaining access?"
+        - id: KQ-3
+          question: "Privilege Level: What accounts/privileges are compromised?"
+        - id: KQ-4
+          question: "Lateral Movement: What systems has the adversary accessed?"
+        - id: KQ-5
+          question: "Impact: What data/systems have been affected?"
+        - id: KQ-6
+          question: "Timeline: When did each phase of the attack occur?"
+      decision_tree:
+        type: ascii
+        content: |
+          ┌─────────────────────────────────────────────────────────────┐
+          │                FROM TRIAGE                                  │
+          └─────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Collect and preserve   │
+                        │  evidence               │
+                        └─────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Perform technical      │
+                        │  analysis               │
+                        └─────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  New signs of           │
+                        │  compromise found?      │
+                        └─────────────────────────┘
+                               │           │
+                              YES          NO
+                               │           │
+                               ▼           │
+                     ┌──────────────┐      │
+                     │ Expand scope,│      │
+                     │ continue     │      │
+                     │ analysis     │──────┘
+                     └──────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Is immediate           │
+                        │  containment needed?    │
+                        └─────────────────────────┘
+                               │           │
+                              YES          NO
+                               │           │
+                               ▼           ▼
+                     ┌──────────────┐  ┌──────────────────────┐
+                     │ PROCEED TO   │  │ Continue until full  │
+                     │ CONTAINMENT  │  │ scope determined,    │
+                     │ (parallel)   │  │ then CONTAINMENT     │
+                     └──────────────┘  └──────────────────────┘
+      checklists:
+        - id: "4.1"
+          title: Evidence Collection and Preservation
+          items:
+            - item_id: INV-4.1-1
+              action: Identify evidence sources (logs, memory, disk, network)
+            - item_id: INV-4.1-2
+              action: Preserve evidence integrity (chain of custody) and hash documents to ensure integrity
+            - item_id: INV-4.1-3
+              action: Collect volatile evidence first (memory before disk)
+            - item_id: INV-4.1-4
+              action: Document collection procedures and timestamps
+        - id: "4.7"
+          title: Root Cause Identification
+          items:
+            - item_id: INV-4.7-1
+              action: Initial access vector identified
+            - item_id: INV-4.7-2
+              action: Vulnerabilities exploited identified
+            - item_id: INV-4.7-3
+              action: Enabling conditions documented
+      data_tables:
+        - table_id: log_analysis
+          title: Log Analysis
+          columns: 
+            - Log Source
+            - Reviewed
+            - Key Findings
+        - table_id: attack_chain
+          title: Attack Chain Mapping
+          columns:
+            - Phase
+            - Evidence Found
+            - Timestamp
+            - Details
+        - table_id: indicators
+          title: Indicator Extraction
+          columns:
+            - Type
+            - Value
+            - Context
+        - table_id: affected_systems
+          title: Affected Systems
+          columns: 
+            - Hostname
+            - IP
+            - Role
+            - Location
+            - Compromise Type
+            - Status
+        - table_id: affected_accounts
+          title: Affected Accounts
+          columns:
+            - Account
+            - Type
+            - Privilege Level
+            - Compromise Evidence
+        - table_id: timeline
+          title: Timeline Construction
+          columns: 
+            - Timestamp (UTC)
+            - System
+            - Event
+            - Source
+            - Notes
+      exit_criteria:
+        - Full scope determined (all affected systems/accounts identified)
+        - Attack chain understood (initial access through current state)
+        - All indicators extracted and documented
+        - Timeline constructed
+        - Root cause identified
+        - Impact assessed
+
+    - name: Containment
+      number: 5
+      purpose: Remove adversary access and prevent further damage while preserving evidence.
+      current_phase_indicator_supported: true
+      decision_tree:
+        type: ascii
+        content: |
+          ┌─────────────────────────────────────────────────────────────┐
+          │                FROM INVESTIGATION                           │
+          └─────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Select containment     │
+                        │  strategy based on      │
+                        │  scope and urgency      │
+                        └─────────────────────────┘
+                                      │
+                  ┌───────────────────┼───────────────────┐
+                  │                   │                   │
+                  ▼                   ▼                   ▼
+          ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+          │  ISOLATE     │  │  BLOCK       │  │  MONITOR     │
+          │  (Network    │  │  (Firewall,  │  │  (Enhanced   │
+          │   segment)   │  │   DNS, etc.) │  │   logging)   │
+          └──────────────┘  └──────────────┘  └──────────────┘
+                  │                   │                   │
+                  └───────────────────┼───────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Implement containment  │
+                        │  actions                │
+                        └─────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  New signs of           │
+                        │  compromise?            │
+                        └─────────────────────────┘
+                               │           │
+                              YES          NO
+                               │           │
+                               ▼           ▼
+                     ┌──────────────┐  ┌──────────────────────┐
+                     │ Return to    │  │ PROCEED TO           │
+                     │ INVESTIGATION│  │ ERADICATION          │
+                     └──────────────┘  └──────────────────────┘
+      checklists:
+        - id: "5.1"
+          title: Pre-Containment
+          items:
+            - item_id: CO-5.1-1
+              action: Confirm evidence has been preserved
+            - item_id: CO-5.1-2
+              action: Coordinate timing with stakeholders
+            - item_id: CO-5.1-3
+              action: Prepare rollback plan if containment fails
+            - item_id: CO-5.1-4
+              action: Notify affected system owners
+        - id: "5.2"
+          title: Network Containment
+          items:
+            - item_id: CO-5.2-1
+              action: Block egress to C2 IPs/domains at firewall
+            - item_id: CO-5.2-2
+              action: Block DNS resolution of malicious domains
+            - item_id: CO-5.2-3
+              action: Isolate affected network segments
+            - item_id: CO-5.2-4
+              action: Disconnect compromised systems from network (if required)
+        - id: "5.3"
+          title: Host Containment
+          items:
+            - item_id: CO-5.3-1
+              action: Disable compromised user accounts
+            - item_id: CO-5.3-2
+              action: Reset passwords for compromised accounts, clear cache is appropriate 
+            - item_id: CO-5.3-3
+              action: Revoke active sessions/tokens
+            - item_id: CO-5.3-4
+              action: Disable or block malicious services/processes
+        - id: "5.4"
+          title: Credential Containment
+          items:
+            - item_id: CO-5.4-1
+              action: Force password reset for compromised accounts
+            - item_id: CO-5.4-2
+              action: Rotate service account credentials
+            - item_id: CO-5.4-3
+              action: Rotate API keys/secrets if affected
+            - item_id: CO-5.4-4
+              action: Revoke certificates if compromised
+        - id: "5.5"
+          title: Verification
+          items:
+            - item_id: CO-5.5-1
+              action: Confirm containment actions implemented
+            - item_id: CO-5.5-2
+              action: Monitor for adversary response to containment
+            - item_id: CO-5.5-3
+              action: Verify no new indicators of compromise
+            - item_id: CO-5.5-4
+              action: Document all containment actions taken
+      exit_criteria:
+        - All identified adversary access paths blocked
+        - No new signs of compromise detected
+        - Containment actions documented
+        - Evidence preserved
+
+    - name: Eradication
+      number: 6
+      purpose: Eliminate all artifacts of compromise from the environment.
+      current_phase_indicator_supported: true
+      decision_tree:
+        type: ascii
+        content: |
+          ┌─────────────────────────────────────────────────────────────┐
+          │                FROM CONTAINMENT                             │
+          └─────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Develop eradication    │
+                        │  plan                   │
+                        └─────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Can system be          │
+                        │  cleaned in place?      │
+                        └─────────────────────────┘
+                               │           │
+                              YES          NO
+                               │           │
+                               ▼           ▼
+                     ┌──────────────┐  ┌──────────────────────┐
+                     │ Remove       │  │ Reimage from clean   │
+                     │ malware/     │  │ baseline             │
+                     │ artifacts    │  │                      │
+                     └──────────────┘  └──────────────────────┘
+                               │           │
+                               └─────┬─────┘
+                                     │
+                                     ▼
+                        ┌─────────────────────────┐
+                        │  Patch vulnerabilities  │
+                        │  that enabled attack    │
+                        └─────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Verify eradication     │
+                        │  complete               │
+                        └─────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Any remaining          │
+                        │  artifacts found?       │
+                        └─────────────────────────┘
+                               │           │
+                              YES          NO
+                               │           │
+                               ▼           ▼
+                     ┌──────────────┐  ┌──────────────────────┐
+                     │ Continue     │  │ PROCEED TO           │
+                     │ eradication  │  │ RECOVERY             │
+                     └──────────────┘  └──────────────────────┘
+      checklists:
+        - id: "6.1"
+          title: Eradication Planning
+          items:
+            - item_id: ER-6.1-1
+              action: Document all systems requiring eradication
+            - item_id: ER-6.1-2
+              action: Determine eradication method for each (clean vs reimage)
+            - item_id: ER-6.1-3
+              action: Coordinate timing with system owners
+            - item_id: ER-6.1-4
+              action: Prepare clean images/backups
+        - id: "6.2"
+          title: Malware Removal
+          items:
+            - item_id: ER-6.2-1
+              action: Remove all identified malware/backdoors
+            - item_id: ER-6.2-2
+              action: Delete malicious files and registry entries
+            - item_id: ER-6.2-3
+              action: Remove persistence mechanisms
+            - item_id: ER-6.2-4
+              action: Clear malicious scheduled tasks
+        - id: "6.3"
+          title: System Remediation
+          items:
+            - item_id: ER-6.3-1
+              action: Reimage systems that cannot be cleaned
+            - item_id: ER-6.3-2
+              action: Rebuild from known-good baseline
+            - item_id: ER-6.3-3
+              action: Apply all security patches
+            - item_id: ER-6.3-4
+              action: Harden configuration per security standards
+        - id: "6.4"
+          title: Vulnerability Remediation
+          items:
+            - item_id: ER-6.4-1
+              action: Patch vulnerabilities exploited in attack
+            - item_id: ER-6.4-2
+              action: Address configuration weaknesses
+            - item_id: ER-6.4-3
+              action: Close unnecessary ports/services
+            - item_id: ER-6.4-4
+              action: Update security controls
+        - id: "6.5"
+          title: Verification
+          items:
+            - item_id: ER-6.5-1
+              action: Scan for malware with updated signatures
+            - item_id: ER-6.5-2
+              action: Verify all IOCs are absent
+            - item_id: ER-6.5-3
+              action: Confirm persistence mechanisms removed
+            - item_id: ER-6.5-4
+              action: Validate system integrity
+      exit_criteria:
+        - All malware and artifacts removed
+        - All affected systems remediated
+        - Exploited vulnerabilities patched
+        - Verification scans clean
+
+    - name: Recovery
+      number: 7
+      purpose: Restore systems to normal operations and validate security.
+      current_phase_indicator_supported: true
+      decision_tree:
+        type: ascii
+        content: |
+          ┌─────────────────────────────────────────────────────────────┐
+          │                FROM ERADICATION                             │
+          └─────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Restore systems to     │
+                        │  operational state      │
+                        └─────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Test system            │
+                        │  functionality          │
+                        └─────────────────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Enhanced monitoring    │
+                        │  in place?              │
+                        └─────────────────────────┘
+                               │           │
+                              NO          YES
+                               │           │
+                               ▼           │
+                     ┌──────────────┐      │
+                     │ Implement    │      │
+                     │ monitoring   │──────┘
+                     └──────────────┘
+                                      │
+                                      ▼
+                        ┌─────────────────────────┐
+                        │  Any signs of           │
+                        │  adversary return?      │
+                        └─────────────────────────┘
+                               │           │
+                              YES          NO
+                               │           │
+                               ▼           ▼
+                     ┌──────────────┐  ┌──────────────────────┐
+                     │ Return to    │  │ PROCEED TO           │
+                     │ INVESTIGATION│  │ POST-INCIDENT        │
+                     └──────────────┘  └──────────────────────┘
+      checklists:
+        - id: "7.1"
+          title: System Restoration
+          items:
+            - item_id: REC-7.1-1
+              action: Reconnect systems to network
+            - item_id: REC-7.1-2
+              action: Restore data from clean backups
+            - item_id: REC-7.1-3
+              action: Re-enable disabled services
+            - item_id: REC-7.1-4
+              action: Restore user access
+        - id: "7.2"
+          title: Validation
+          items:
+            - item_id: REC-7.2-1
+              action: Test system functionality
+            - item_id: REC-7.2-2
+              action: Verify security controls operational
+            - item_id: REC-7.2-3
+              action: Confirm logging and monitoring active
+            - item_id: REC-7.2-4
+              action: Validate business processes working
+        - id: "7.3"
+          title: Enhanced Monitoring
+          items:
+            - item_id: REC-7.3-1
+              action: Add specific detection rules for incident IOCs
+            - item_id: REC-7.3-2
+              action: Implement additional monitoring for affected systems
+            - item_id: REC-7.3-3
+              action: Monitor for adversary return (30-90 days)
+            - item_id: REC-7.3-4
+              action: Track any anomalies in recovered systems
+        - id: "7.4"
+          title: Communication
+          items:
+            - item_id: REC-7.4-1
+              action: Notify stakeholders of restoration
+            - item_id: REC-7.4-2
+              action: Provide status update to leadership
+            - item_id: REC-7.4-3
+              action: Communicate any ongoing restrictions
+      exit_criteria:
+        - All systems restored to operational state
+        - Functionality validated
+        - Enhanced monitoring in place
+        - No signs of adversary return
+
+    - name: Post-Incident
+      number: 8
+      purpose: Document the incident, capture lessons learned, and improve capabilities.
+      current_phase_indicator_supported: true
+      checklists:
+        - id: "8.1"
+          title: Documentation
+          items:
+            - item_id: PI-8.1-1
+              action: Finalize incident timeline
+            - item_id: PI-8.1-2
+              action: Complete incident report
+            - item_id: PI-8.1-3
+              action: Document all indicators of compromise
+            - item_id: PI-8.1-4
+              action: Archive evidence per retention policy
+        - id: "8.2"
+          title: Lessons Learned Meeting
+          items:
+            - item_id: PI-8.2-1
+              action: Conduct within 2 weeks of incident closure. Answer key questions.
+        - id: "8.3"
+          title: Improvement Actions
+          items:
+            - item_id: PI-8.3-1
+              action: Assign action items and follow-up tasks.
+        - id: "8.4"
+          title: Detection Improvements
+          items:
+            - item_id: PI-8.4-1
+              action: Add detection rules for observed TTPs
+            - item_id: PI-8.4-2
+              action: Update threat intelligence with new IOCs
+            - item_id: PI-8.4-3
+              action: Address identified blind spots
+            - item_id: PI-8.4-4
+              action: Update correlation rules
+        - id: "8.5"
+          title: Process Improvements
+          items:
+            - item_id: PI-8.5-1
+              action: Update IR procedures based on lessons learned
+            - item_id: PI-8.5-2
+              action: Update playbooks if needed
+            - item_id: PI-8.5-3
+              action: Identify training needs
+            - item_id: PI-8.5-4
+              action: Schedule follow-up exercises
+        - id: "8.6"
+          title: Final Report
+          items:
+            - item_id: PI-8.6-1
+              action: Complete the After-Action Report template
+        - id: "8.7"
+          title: Ticket Closure
+          items:
+            - item_id: PI-8.7-1
+              action: All documentation complete
+            - item_id: PI-8.7-2
+              action: Evidence archived
+            - item_id: PI-8.7-3
+              action: Follow-up actions assigned
+            - item_id: PI-8.7-4
+              action: Ticket closed in case management
+      data_tables:
+        - table_id: lessons_learned
+          title: Lessons Learned Questions
+          columns: 
+            - Question
+            - Answer
+        - table_id: improvement_actions
+          title: Improvement Actions
+          columns: 
+            - Finding
+            - Action Item
+            - Owner
+            - Due Date
+      exit_criteria:
+        - Incident report complete
+        - Lessons learned captured
+        - Follow-up actions assigned with owners
+        - Evidence archived
+        - Ticket closed
+
+  appendices:
+    - appendix_id: A
+      title: Dynamic Flowchart Specification
+      sections:
+        - heading: IR-ASSIST Visual Phase Indicator
+          content: Specification for dynamic flowchart rendering.
+          artifacts:
+            - type: mermaid
+              content: |
+                flowchart LR
+                    subgraph Phases
+                        P[Preparation] --> I[Identification]
+                        I --> T[Triage]
+                        T --> INV[Investigation]
+                        INV --> C[Containment]
+                        C --> E[Eradication]
+                        E --> R[Recovery]
+                        R --> PI[Post-Incident]
+                    end
+                    style P fill:#90EE90
+                    style I fill:#90EE90
+                    style T fill:#90EE90
+                    style INV fill:#FFD700
+                    style C fill:#FFFFFF
+                    style E fill:#FFFFFF
+                    style R fill:#FFFFFF
+                    style PI fill:#FFFFFF
+    - appendix_id: B
+      title: Quick Reference Cards
+      sections:
+        - heading: Escalation Quick Reference
+          content: |
+            | Severity| Notification Timeline | Who to Notify |
+            |----------|----------------------|---------------|
+            | CRITICAL | Immediately | Cyber Incident Cooridinator, CDIRT, Corporate Incident Response, CIS Leadership |
+            | HIGH | Immediately | Cyber Incident Coordinatoer, Cyber Defense Leadership, CIS Leadership |
+            | MEDIUM | Within 1 hour | Cyber Incident Coordinator, Cyber Defense Leaderhship |
+            | LOW | Next business day | Document only |
+        - heading: Phase Transition Quick Reference
+          content: Table of triggers for moving between phases.
+        - heading: Evidence Collection Priority
+          content: Table of evidence types by volatility.
+
+  templates:
+    communication:
+      - template_id: initial_notification
+        subject: "[PRIORITY] Security Incident - [Brief Description]"
+        body: |
+          Incident ID: [INC-YYYY-XXXX]
+          Severity: [CRITICAL/HIGH/MEDIUM/LOW]
+          Category: [CAT X - Name]
+          Current Phase: [Phase]
+
+          SUMMARY:
+          [1-2 sentences describing what was detected]
+
+          AFFECTED:
+          - Systems: [List]
+          - Users: [If known]
+
+          CURRENT STATUS:
+          [What is being done now]
+
+          NEXT UPDATE:
+          [Expected time of next update]
+
+          CONTACT:
+          [Cyber Incident Coordinator/Lead contact info]
+      - template_id: executive_update_scqa
+        body: |
+          SITUATION:
+          [Baseline context - what is the normal state]
+
+          COMPLICATION:
+          [What changed - the threat/incident]
+
+          QUESTION:
+          [What decision is needed, if any]
+
+          ANSWER/RECOMMENDATION:
+          [What we recommend or current status]
+    reports:
+      - template_id: after_action_report
+        body: |
+          INCIDENT AFTER-ACTION REPORT
+          ----------------------------
+          Incident ID:
+          Category:
+          Severity:
+          Duration: [Detection to Closure]
+
+          EXECUTIVE SUMMARY
+          [2-3 sentences: What happened, impact, outcome]
+
+          TIMELINE SUMMARY
+          Detection:
+          Containment:
+          Eradication:
+          Recovery:
+
+          ROOT CAUSE
+          ...
+          IMPACT
+          ...
+          LESSONS LEARNED
+          ...
+          FOLLOW-UP ACTIONS
+          ...
+
+  mapping:
+    source_file: "ir-playbook.md"
+    section_map:
+      - md_section: "## Overview"
+        yaml_paths: 
+          - path: overview
+            type: object 
+      - md_section: "# PHASE 2: IDENTIFICATION"
+        yaml_paths:
+          - path: phases[1]
+            type: array_index
+      - md_section: "## Decision Tree"
+        yaml_paths:
+          - path: phases[*].decision_tree
+            type: wildcard
+      - md_section: "# Appendix A: Dynamic Flowchart Specification"
+        yaml_paths: 
+          - path: lifecycle
+            type: object
+          - path: appendices[0]
+            type: array_index 
+
+
