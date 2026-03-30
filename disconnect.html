@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Isolation Protocol — Disconnect Layer Sequence</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: #0a0a0f;
+    font-family: 'Courier New', 'Lucida Console', monospace;
+    color: #e2e8f0;
+    padding: 2rem;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(30,30,60,0.4) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(20,40,30,0.3) 0%, transparent 50%);
+  }
+
+  .header {
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 1rem;
+  }
+  .header-sub {
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    color: #64748b;
+    margin-bottom: 0.3rem;
+  }
+  .header-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    color: #f1f5f9;
+  }
+  .header-meta {
+    font-size: 0.7rem;
+    color: #475569;
+    margin-top: 0.3rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .controls {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  button {
+    background: transparent;
+    padding: 0.4rem 1rem;
+    cursor: pointer;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    border: 1px solid #22c55e;
+    color: #22c55e;
+  }
+  .btn-primary:hover { background: #22c55e22; }
+  .btn-secondary {
+    border: 1px solid #334155;
+    color: #64748b;
+  }
+  .btn-secondary:hover { background: #33415522; }
+  .controls-hint {
+    font-size: 0.65rem;
+    color: #475569;
+  }
+
+  .layers { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .layer {
+    border-left: 3px solid #334155;
+    border-top: 1px solid #1e293b;
+    border-right: 1px solid #1e293b;
+    border-bottom: 1px solid #1e293b;
+    background: #0d1117;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .layer:hover { background: #0f172a; }
+
+  .layer.isolated {
+    background: var(--layer-dim);
+  }
+
+  .scanlines {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+  }
+  .isolated .scanlines { display: block; }
+
+  .layer-inner {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    position: relative;
+  }
+
+  .layer-number {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: #475569;
+    min-width: 60px;
+    transition: color 0.3s;
+  }
+  .isolated .layer-number { color: var(--layer-color); }
+
+  .layer-content { flex: 1; }
+
+  .layer-title {
+    font-size: 0.85rem;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    margin-bottom: 0.5rem;
+    transition: color 0.3s;
+  }
+  .isolated .layer-title { color: var(--layer-color); }
+
+  .isolated-badge {
+    display: none;
+    margin-left: 0.75rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--layer-color);
+  }
+  .isolated .isolated-badge { display: inline; }
+
+  .nodes {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .node {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+    color: #64748b;
+    letter-spacing: 0.05em;
+    transition: all 0.3s;
+  }
+  .isolated .node {
+    color: #475569;
+    text-decoration: line-through;
+  }
+  .node-icon { font-size: 0.8rem; transition: filter 0.3s; }
+  .isolated .node-icon { filter: grayscale(1); }
+
+  .layer-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1e293b;
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+  .isolated .layer-dot {
+    background: var(--layer-color);
+    box-shadow: 0 0 8px var(--layer-color);
+  }
+
+  .protected-bar {
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid #1e3a5f;
+    border-left: 3px solid #3b82f6;
+    background: #0a1628;
+  }
+  .protected-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: #3b82f6;
+    margin-bottom: 0.75rem;
+  }
+  .protected-nodes {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .protected-node {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+    color: #60a5fa;
+  }
+
+  /* Right panel */
+  .right-panel { position: sticky; top: 1rem; }
+
+  .progress-panel {
+    border: 1px solid #1e293b;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #0d1117;
+  }
+  .progress-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    color: #475569;
+    margin-bottom: 0.75rem;
+  }
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .progress-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #1e293b;
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .progress-line {
+    flex: 1;
+    height: 1px;
+    background: #1e293b;
+    transition: background 0.4s;
+  }
+  .progress-name {
+    font-size: 0.6rem;
+    color: #334155;
+    letter-spacing: 0.1em;
+    transition: color 0.3s;
+    white-space: nowrap;
+  }
+  .progress-count {
+    margin-top: 1rem;
+    font-size: 0.65rem;
+    color: #64748b;
+  }
+
+  .detail-panel {
+    border: 1px solid #1e293b;
+    padding: 1.25rem;
+    background: #0d1117;
+    min-height: 200px;
+    transition: border-color 0.3s;
+  }
+  .detail-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 160px;
+    text-align: center;
+    color: #334155;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    line-height: 1.8;
+  }
+  .detail-tag {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    margin-bottom: 0.5rem;
+  }
+  .detail-title {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #f1f5f9;
+    margin-bottom: 1rem;
+    letter-spacing: 0.05em;
+  }
+  .detail-section-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: #64748b;
+    margin-bottom: 0.4rem;
+  }
+  .detail-action {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+  .detail-effect {
+    font-size: 0.7rem;
+    line-height: 1.6;
+  }
+
+  .warning-note {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #292524;
+    background: #0d1117;
+    font-size: 0.6rem;
+    color: #57534e;
+    line-height: 1.7;
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 768px) {
+    .grid { grid-template-columns: 1fr; }
+    .right-panel { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-sub">CYBER INCIDENT RESPONSE // NETWORK ISOLATION PROTOCOL</div>
+  <div class="header-title">DISCONNECT LAYER SEQUENCE</div>
+  <div class="header-meta">Large US Bank · 2 Datacenters · GCP · Retail Network</div>
+</div>
+
+<div class="grid">
+  <div>
+    <div class="controls">
+      <button class="btn-primary" onclick="startSimulation()">▶ SIMULATE SEQUENCE</button>
+      <button class="btn-secondary" onclick="resetAll()">↺ RESET</button>
+      <span class="controls-hint">or click any layer to toggle</span>
+    </div>
+
+    <div class="layers" id="layers">
+
+      <!-- Layer 1 -->
+      <div class="layer" id="layer-1"
+        style="--layer-color:#ef4444; --layer-dim:#7f1d1d22;"
+        onclick="toggleLayer(1)">
+        <div class="scanlines" style="background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, #ef444408 3px, #ef444408 4px);"></div>
+        <div class="layer-inner">
+          <div class="layer-number">LAYER 1</div>
+          <div class="layer-content">
+            <div class="layer-title">
+              External Perimeter
+              <span class="isolated-badge">[ISOLATED]</span>
+            </div>
+            <div class="nodes">
+              <div class="node"><span class="node-icon">🌐</span> Internet</div>
+              <div class="node"><span class="node-icon">⇄</span> BGP / Egress</div>
+              <div class="node"><span class="node-icon">🛡</span> CDN / WAF</div>
+            </div>
+          </div>
+          <div class="layer-dot"></div>
+        </div>
+      </div>
+
+      <!-- Layer 2 -->
+      <div class="layer" id="layer-2"
+        style="--layer-color:#f97316; --layer-dim:#7c2d1222;"
+        onclick="toggleLayer(2)">
+        <div class="scanlines" style="background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, #f9731608 3px, #f9731608 4px);"></div>
+        <div class="layer-inner">
+          <div class="layer-number">LAYER 2</div>
+          <div class="layer-content">
+            <div class="layer-title">
+              Cloud Isolation
+              <span class="isolated-badge">[ISOLATED]</span>
+            </div>
+            <div class="nodes">
+              <div class="node"><span class="node-icon">☁</span> GCP VPC</div>
+              <div class="node"><span class="node-icon">⇆</span> VPC Peering</div>
+              <div class="node"><span class="node-icon">🔑</span> Identity / Secrets</div>
+            </div>
+          </div>
+          <div class="layer-dot"></div>
+        </div>
+      </div>
+
+      <!-- Layer 3 -->
+      <div class="layer" id="layer-3"
+        style="--layer-color:#eab308; --layer-dim:#713f1222;"
+        onclick="toggleLayer(3)">
+        <div class="scanlines" style="background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, #eab30808 3px, #eab30808 4px);"></div>
+        <div class="layer-inner">
+          <div class="layer-number">LAYER 3</div>
+          <div class="layer-content">
+            <div class="layer-title">
+              Retail &amp; Office Locations
+              <span class="isolated-badge">[ISOLATED]</span>
+            </div>
+            <div class="nodes">
+              <div class="node"><span class="node-icon">⇒</span> SD-WAN / MPLS</div>
+              <div class="node"><span class="node-icon">🏢</span> Branch Offices</div>
+              <div class="node"><span class="node-icon">💳</span> ATMs</div>
+            </div>
+          </div>
+          <div class="layer-dot"></div>
+        </div>
+      </div>
+
+      <!-- Layer 4 -->
+      <div class="layer" id="layer-4"
+        style="--layer-color:#22c55e; --layer-dim:#14532d22;"
+        onclick="toggleLayer(4)">
+        <div class="scanlines" style="background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, #22c55e08 3px, #22c55e08 4px);"></div>
+        <div class="layer-inner">
+          <div class="layer-number">LAYER 4</div>
+          <div class="layer-content">
+            <div class="layer-title">
+              Datacenter East-West
+              <span class="isolated-badge">[ISOLATED]</span>
+            </div>
+            <div class="nodes">
+              <div class="node"><span class="node-icon">🖥</span> Datacenter 1</div>
+              <div class="node"><span class="node-icon">🖥</span> Datacenter 2</div>
+              <div class="node"><span class="node-icon">🏦</span> Core Banking</div>
+            </div>
+          </div>
+          <div class="layer-dot"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="protected-bar">
+      <div class="protected-label">DO NOT CUT — PROTECTED SYSTEMS</div>
+      <div class="protected-nodes">
+        <div class="protected-node"><span>🏦</span> Core Banking Ledger</div>
+        <div class="protected-node"><span>💸</span> Payment Rails / SWIFT</div>
+        <div class="protected-node"><span>📡</span> Out-of-Band Management</div>
+        <div class="protected-node"><span>🔄</span> DC Replication</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel">
+    <div class="progress-panel">
+      <div class="progress-label">ISOLATION PROGRESS</div>
+
+      <div class="progress-row" id="prog-1">
+        <div class="progress-dot" id="prog-dot-1"></div>
+        <div class="progress-line" id="prog-line-1"></div>
+        <div class="progress-name" id="prog-name-1">○ External Perimeter</div>
+      </div>
+      <div class="progress-row" id="prog-2">
+        <div class="progress-dot" id="prog-dot-2"></div>
+        <div class="progress-line" id="prog-line-2"></div>
+        <div class="progress-name" id="prog-name-2">○ Cloud Isolation</div>
+      </div>
+      <div class="progress-row" id="prog-3">
+        <div class="progress-dot" id="prog-dot-3"></div>
+        <div class="progress-line" id="prog-line-3"></div>
+        <div class="progress-name" id="prog-name-3">○ Retail &amp; Offices</div>
+      </div>
+      <div class="progress-row" id="prog-4">
+        <div class="progress-dot" id="prog-dot-4"></div>
+        <div class="progress-line" id="prog-line-4"></div>
+        <div class="progress-name" id="prog-name-4">○ Datacenter East-West</div>
+      </div>
+
+      <div class="progress-count" id="progress-count">0 of 4 layers isolated</div>
+    </div>
+
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-empty" id="detail-empty">SELECT A LAYER<br>TO VIEW DETAILS</div>
+      <div id="detail-content" style="display:none;">
+        <div class="detail-tag" id="detail-tag"></div>
+        <div class="detail-title" id="detail-title"></div>
+        <div class="detail-section-label">ACTION</div>
+        <div class="detail-action" id="detail-action"></div>
+        <div class="detail-section-label">EFFECT</div>
+        <div class="detail-effect" id="detail-effect"></div>
+      </div>
+    </div>
+
+    <div class="warning-note">
+      ⚠ SEQUENCE MATTERS. External perimeter first. Cloud second. Do not cut core banking replication at any point.
+    </div>
+  </div>
+</div>
+
+<script>
+  const LAYERS = {
+    1: {
+      color: "#ef4444",
+      label: "LAYER 1 · SELECTED",
+      title: "External Perimeter",
+      action: "Withdraw BGP routes. Null-route all internet egress. Kill public-facing APIs.",
+      effect: "Stops C2 channels and active exfiltration.",
+      progNames: ["✓ External Perimeter", "○ External Perimeter"],
+    },
+    2: {
+      color: "#f97316",
+      label: "LAYER 2 · SELECTED",
+      title: "Cloud Isolation",
+      action: "Sever GCP ↔ on-prem VPC peering. Lock identity providers. Isolate secret managers.",
+      effect: "Closes attacker highway between cloud and datacenter.",
+      progNames: ["✓ Cloud Isolation", "○ Cloud Isolation"],
+    },
+    3: {
+      color: "#eab308",
+      label: "LAYER 3 · SELECTED",
+      title: "Retail & Office Locations",
+      action: "Segment branch internet breakout. Maintain controlled DC links. ATMs evaluated separately.",
+      effect: "Preserves teller operations while cutting exposure.",
+      progNames: ["✓ Retail & Offices", "○ Retail & Offices"],
+    },
+    4: {
+      color: "#22c55e",
+      label: "LAYER 4 · SELECTED",
+      title: "Datacenter East-West",
+      action: "Reduce DC-to-DC trust. Wall off core banking from all non-essential systems.",
+      effect: "Protects the ledger — the last thing that must survive.",
+      progNames: ["✓ Datacenter East-West", "○ Datacenter East-West"],
+    },
+  };
+
+  const state = { disconnected: new Set(), activeLayer: null, simTimer: null };
+
+  function toggleLayer(id) {
+    if (state.disconnected.has(id)) {
+      state.disconnected.delete(id);
+      state.activeLayer = null;
+    } else {
+      state.disconnected.add(id);
+      state.activeLayer = id;
+    }
+    render();
+  }
+
+  function render() {
+    const count = state.disconnected.size;
+    document.getElementById("progress-count").textContent = `${count} of 4 layers isolated`;
+
+    for (let i = 1; i <= 4; i++) {
+      const el = document.getElementById(`layer-${i}`);
+      const dot = document.getElementById(`prog-dot-${i}`);
+      const line = document.getElementById(`prog-line-${i}`);
+      const name = document.getElementById(`prog-name-${i}`);
+      const layer = LAYERS[i];
+      const isIsolated = state.disconnected.has(i);
+
+      if (isIsolated) {
+        el.classList.add("isolated");
+        el.style.borderLeftColor = layer.color;
+        el.style.borderTopColor = layer.color;
+        el.style.borderRightColor = layer.color;
+        el.style.borderBottomColor = layer.color;
+        dot.style.background = layer.color;
+        dot.style.boxShadow = `0 0 6px ${layer.color}`;
+        line.style.background = layer.color;
+        name.style.color = layer.color;
+        name.textContent = layer.progNames[0];
+      } else {
+        el.classList.remove("isolated");
+        el.style.borderLeftColor = "#334155";
+        el.style.borderTopColor = "#1e293b";
+        el.style.borderRightColor = "#1e293b";
+        el.style.borderBottomColor = "#1e293b";
+        dot.style.background = "#1e293b";
+        dot.style.boxShadow = "none";
+        line.style.background = "#1e293b";
+        name.style.color = "#334155";
+        name.textContent = layer.progNames[1];
+      }
+    }
+
+    // Detail panel
+    const panel = document.getElementById("detail-panel");
+    const empty = document.getElementById("detail-empty");
+    const content = document.getElementById("detail-content");
+
+    if (state.activeLayer) {
+      const l = LAYERS[state.activeLayer];
+      panel.style.borderColor = l.color;
+      empty.style.display = "none";
+      content.style.display = "block";
+      document.getElementById("detail-tag").textContent = l.label;
+      document.getElementById("detail-tag").style.color = l.color;
+      document.getElementById("detail-title").textContent = l.title;
+      document.getElementById("detail-action").textContent = l.action;
+      document.getElementById("detail-effect").textContent = l.effect;
+      document.getElementById("detail-effect").style.color = l.color;
+    } else {
+      panel.style.borderColor = "#1e293b";
+      empty.style.display = "flex";
+      content.style.display = "none";
+    }
+  }
+
+  function startSimulation() {
+    resetAll();
+    let step = 1;
+    function next() {
+      if (step > 4) return;
+      state.disconnected.add(step);
+      state.activeLayer = step;
+      render();
+      step++;
+      state.simTimer = setTimeout(next, 1800);
+    }
+    state.simTimer = setTimeout(next, 400);
+  }
+
+  function resetAll() {
+    if (state.simTimer) { clearTimeout(state.simTimer); state.simTimer = null; }
+    state.disconnected.clear();
+    state.activeLayer = null;
+    render();
+  }
+
+  render();
+</script>
+</body>
+</html>
