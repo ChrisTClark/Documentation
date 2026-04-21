@@ -1,0 +1,337 @@
+# Gemini CLI Quick Reference Guide
+
+**Setup:** Terminal for agent interaction, VS Code for file viewing and editing.
+**Workspace:** `~/Library/CloudStorage/OneDrive-KeyCorp/work-assistant/`
+
+---
+
+## Mental model
+
+Two windows, one job each:
+
+- **Terminal** runs Gemini. You talk to the agent here. It reads and writes files.
+- **VS Code** is your viewer and editor. You read drafts, review records, hand-edit YAML, and browse the tree here.
+
+Files sync through the filesystem — Gemini writes, VS Code sees the change (may need to refocus the editor tab). You edit in VS Code, Gemini sees it on next read.
+
+Don't run Gemini inside VS Code's terminal. Freezes, sync-watcher conflicts, extension contention.
+
+---
+
+## Daily startup
+
+**Launch Gemini:**
+```
+work
+```
+(The alias you set. Equivalent to `cd ~/Library/CloudStorage/OneDrive-KeyCorp/work-assistant && gemini`.)
+
+**Open VS Code on the same folder** (separate window):
+```
+code ~/Library/CloudStorage/OneDrive-KeyCorp/work-assistant
+```
+
+Arrange: VS Code on one monitor or half-screen, Terminal on the other. Alt-Tab or Mission Control to switch.
+
+**First message to Gemini each day:**
+```
+Start of day. Read context/ and logs/session-log.md (last 3 entries).
+Summarize what's open across current/. Then ask: QUICK or SUSTAINED?
+```
+
+---
+
+## Gemini CLI command cheatsheet
+
+**Inside a Gemini session:**
+
+| Command | What it does |
+|---|---|
+| `/quit` or Ctrl-D | Exit the session |
+| `/help` | Show slash commands |
+| `/clear` | Clear screen (session context preserved) |
+| `/compress` | Compress conversation history when context gets heavy |
+| `@path/to/file` | Inject a file's content into your next message |
+| Shift-Tab | Accept a pending edit |
+| Esc | Reject a pending edit / cancel |
+
+**Launching Gemini (from shell):**
+
+| Flag | When to use |
+|---|---|
+| `gemini` | Normal interactive launch |
+| `gemini "your prompt"` | Launch with an initial prompt |
+| `gemini -r latest` | Resume the most recent session |
+| `gemini --list-sessions` | List resumable sessions, then exit |
+| `gemini -p "prompt"` | Headless one-shot (no interactive mode) |
+| `gemini --include-directories ~/other/path` | Add another folder to workspace |
+| `gemini --approval-mode default` | Prompt before edits (keep this as default) |
+| `gemini --approval-mode plan` | Plan-first mode for complex tasks |
+
+**Don't use** `--yolo` or `--approval-mode yolo` on operational work. Your append-only and review-before-send discipline depends on seeing each change.
+
+---
+
+## Split-brain workflow patterns
+
+### Pattern 1: Triaging inbox
+
+**Terminal (Gemini):**
+```
+Triage inbox/vendor-notice.pdf. Classify: work type, new case or existing,
+template. Propose a case folder name.
+```
+
+Gemini proposes. You approve or redirect.
+
+**VS Code:** Open `inbox/vendor-notice.pdf` to cross-reference as Gemini describes it. Open the proposed case folder once created to verify structure.
+
+### Pattern 2: Opening a new case
+
+**Terminal:**
+```
+Opening a third-party-incident. Descriptor: bridgepay-breach.
+Create the folder and record. Ask me the questions for the front matter.
+```
+
+Gemini creates `current/third-party-incidents/2026-04-21-bridgepay-breach/` with inner structure and the templated record.
+
+**VS Code:** Open the new record file to watch it populate as you answer Gemini's questions. You see changes live (may need to click the tab to refresh).
+
+### Pattern 3: Drafting a deliverable
+
+**Terminal:**
+```
+Draft an executive summary for the BridgePay case. Pull from the incident
+record. Use communication-style.yaml for tone.
+```
+
+Gemini drafts to `current/third-party-incidents/2026-04-21-bridgepay-breach/drafts/exec-summary.md`.
+
+**VS Code:** Open the draft. Read it. Edit directly if you want small changes, or tell Gemini what to revise.
+
+**Back in Terminal:**
+```
+I edited the draft in VS Code. Re-read it and tighten the BLUF.
+```
+
+Gemini picks up your edits on re-read. Iterate until final.
+
+### Pattern 4: Finalizing and sending
+
+**Terminal:**
+```
+The draft at current/third-party-incidents/2026-04-21-bridgepay-breach/drafts/exec-summary.md
+is final and I'm sending it now. Copy to the case's outputs/ with today's
+date, copy to archive/summaries/, remove the draft, and log the send.
+```
+
+**VS Code:** Verify the file moved correctly. Check `archive/summaries/` for the rollup copy.
+
+### Pattern 5: Hand-editing YAML context
+
+Context files (`role.yaml`, `communication-style.yaml`, etc.) you edit in **VS Code directly**. Don't have Gemini edit them mid-session — Gemini reads them; you curate them.
+
+After edits, in Terminal:
+```
+I updated context/communication-style.yaml. Re-read it before your next draft.
+```
+
+### Pattern 6: Closing a case
+
+**Terminal:**
+```
+Closing current/third-party-incidents/2026-04-21-bridgepay-breach.
+Move the folder to archive/ with today's date prepended. Log it.
+```
+
+**VS Code:** Verify the move happened and `current/` no longer shows the folder.
+
+---
+
+## Injecting file content with @
+
+The `@` syntax is useful when you want Gemini to focus on a specific file without scanning the tree:
+
+```
+Summarize @current/cyber-events/2026-04-21-akamai-advisory/cyber-event-record.md
+in 3 sentences.
+```
+
+```
+Compare @inbox/vendor-claim.extracted.md against
+@context/playbooks.yaml — which playbook applies?
+```
+
+Works across the workspace. Tab-completes the path.
+
+---
+
+## Handling .docx, .pdf, .msg
+
+Gemini can't reliably read these. The pattern:
+
+1. Drop the file in the relevant `inputs/` folder (via Finder, VS Code, or `cp`).
+2. In Terminal:
+   ```
+   Extract text from inputs/vendor-notice.pdf to
+   inputs/vendor-notice.extracted.md. Preserve headings and tables as best
+   you can. Keep the original file.
+   ```
+3. Gemini produces the extraction. Work from the extraction; original stays as authoritative source.
+
+For **.msg** files: convert manually. Open in Outlook, copy body + headers, paste into a `.md` file in `inputs/` with the top block:
+```
+From:
+To:
+Date:
+Subject:
+```
+
+---
+
+## Session management
+
+**When context gets heavy (long session, many files read):**
+```
+/compress
+```
+Summarizes conversation history, frees context window, keeps the thread.
+
+**Resuming yesterday's work:**
+```
+gemini -r latest
+```
+Or list first to pick:
+```
+gemini --list-sessions
+gemini -r 3
+```
+
+**Ending the day:**
+```
+End of day. Append a summary to logs/session-log.md: what we worked on,
+what moved to archive/, what's carrying forward in current/. Then I'll quit.
+```
+
+Then `/quit` or Ctrl-D.
+
+---
+
+## Failure modes and fixes
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Gemini rewrites a record instead of appending | Drift from GEMINI.md rule | Revert via OneDrive version history. Add a specific sentence to GEMINI.md naming the drift you saw. |
+| Gemini stops referencing context/ mid-session | Context amnesia | `Re-read context/communication-style.yaml before the next draft.` |
+| File-read error in OneDrive folder | Files On-Demand un-downloaded it | In Finder, select folder → right-click → Always Keep on This Device. |
+| Gemini proposes a file path that doesn't exist | Path hallucination | Ask it to `ls` the parent folder first, then correct. |
+| Non-text file extraction is garbled | .docx/.pdf limits | Open in native app, copy text, paste into the `.extracted.md` yourself. |
+| Gemini classifies a case wrong (e.g., third-party as incident) | Route confusion | Correct explicitly, then: `Update GEMINI.md with a sentence naming the signal that distinguishes these.` |
+| Terminal feels slow on large workspace | Archive scanning on every read | Add a `.geminiignore` file at root with `archive/` and `.obsidian/` listed. |
+| VS Code doesn't show Gemini's edits | Editor tab cached | Click the tab, or Cmd-Shift-P → "Revert File". |
+
+---
+
+## Daily prompt library
+
+Keep these in a note for copy-paste. All assume you're in a Gemini session, in your work-assistant workspace.
+
+**Start of day**
+```
+Start of day. Read context/ and logs/session-log.md (last 3 entries).
+Summarize what's open across current/. Then ask: QUICK or SUSTAINED?
+```
+
+**Triage inbox item**
+```
+Triage inbox/<filename>. Classify: work type, new case or existing,
+template. Propose a case folder name.
+```
+
+**Open a new case**
+```
+Opening a [cyber-incident | third-party-incident | client-incident |
+cyber-event | task]. Descriptor: <short>. Create the folder and record.
+Ask me the questions for the front matter.
+```
+
+**Escalate an event to an incident**
+```
+The event at current/cyber-events/<folder> has escalated.
+Move it to current/cyber-incidents/ with an appropriate descriptor.
+Preserve the pre-escalation record. Update the record type.
+```
+
+**Draft a deliverable**
+```
+Draft a [summary | audit response | notification | memo] for
+<case>. Pull from the record. Use communication-style.yaml for tone.
+Put the draft in the case's drafts/ folder.
+```
+
+**Finalize and send**
+```
+The draft at <path> is final and I'm sending it now.
+Copy to outputs/ with today's date, copy to archive/summaries/ (or
+archive/audit/) if applicable, remove the draft, and log the send.
+```
+
+**Close a case**
+```
+Closing <case path>. Move to archive/ with today's date prepended.
+Log it.
+```
+
+**End of day**
+```
+End of day. Append a summary to logs/session-log.md: what we worked on,
+what moved to archive/, what's carrying forward.
+```
+
+---
+
+## What stays in Terminal, what stays in VS Code
+
+**Terminal only:**
+- Talking to Gemini
+- Launching sessions, resuming, switching modes
+- Asking Gemini to create, move, or edit files
+
+**VS Code only:**
+- Hand-editing YAML context files
+- Reading drafts, records, templates
+- Browsing the tree via Explorer sidebar
+- Searching across files (Cmd-Shift-F)
+- Version-control-style review of Gemini's pending edits (if you use the Git integration and commit snapshots)
+
+**Either:**
+- Opening a file for reference
+- Quick peek at session log
+
+---
+
+## Weekly maintenance
+
+Once a week, 10 minutes:
+
+1. Scan `current/` — anything there for more than a week that should be closed or archived?
+2. Check `logs/session-log.md` — does the audit trail read clearly?
+3. Check `templates/` — any silent creep from Gemini adding fields?
+4. Review `GEMINI.md` — any failure modes from the week that need a new rule?
+
+The GEMINI.md file is your tuning knob. Treat it like a living document, not a one-time scaffold.
+
+---
+
+## Emergency reset
+
+If Gemini gets confused about workspace state (rare, but happens):
+
+1. `/quit`
+2. `ls -la ~/Library/CloudStorage/OneDrive-KeyCorp/work-assistant` — verify files are actually there
+3. In Finder: right-click the folder → Always Keep on This Device (in case OneDrive evicted something)
+4. Relaunch: `work`
+5. First message: `Read GEMINI.md and confirm the rules. Then list the top-level workspace tree.`
+
+That's the cold-start sanity check.
