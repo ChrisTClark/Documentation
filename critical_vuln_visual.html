@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Critical Vulnerability Incident Response Playbook — Financial Institution</title>
+<style>
+  :root {
+    --red:      #B03030; --red-lt:    #FDF0EF; --red-mid:   #C0392B;
+    --amber:    #B8690A; --amber-lt:  #FEF8EE; --amber-mid: #D4850A;
+    --blue:     #1B4F72; --blue-lt:   #EBF4FB; --blue-mid:  #2471A3;
+    --green:    #1A6B3A; --green-lt:  #EDFAF4; --green-mid: #1E8449;
+    --purple:   #5B2C8F; --purple-lt: #F4EEF9; --purple-mid:#7D3C98;
+    --teal:     #0E6655; --teal-lt:   #E8F8F5; --teal-mid:  #148F77;
+    --gray:     #2C3E50; --gray-lt:   #F4F6F7; --gray-mid:  #7F8C8D;
+    --ink:      #1C2833;
+    --muted:    #566573;
+    --border:   #D5D8DC;
+    --mono:     'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px; line-height: 1.65;
+    color: var(--ink); background: #F7F9FA;
+  }
+
+  /* ── COVER ── */
+  .cover {
+    background: linear-gradient(135deg, #1C2833 0%, #2C3E50 60%, #1B4F72 100%);
+    color: #fff; padding: 56px 60px 48px;
+    position: relative; overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(-50deg, transparent, transparent 44px,
+      rgba(255,255,255,0.015) 44px, rgba(255,255,255,0.015) 45px);
+    pointer-events: none;
+  }
+  .cover-eyebrow {
+    font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+    color: rgba(255,255,255,0.4); margin-bottom: 16px; position: relative;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .cover-eyebrow::before {
+    content: ''; display: inline-block; width: 28px; height: 1px; background: rgba(255,255,255,0.3);
+  }
+  .cover h1 {
+    font-size: 32px; font-weight: 700; line-height: 1.2;
+    margin-bottom: 12px; position: relative;
+  }
+  .cover h1 em { color: #E74C3C; font-style: normal; }
+  .cover-desc {
+    font-size: 15px; color: rgba(255,255,255,0.6);
+    max-width: 620px; position: relative; line-height: 1.65;
+  }
+  .cover-chips {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-top: 36px; position: relative;
+  }
+  .chip {
+    padding: 5px 14px; border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.2);
+    font-size: 11px; color: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.07);
+  }
+  .chip strong { color: #fff; font-weight: 600; }
+
+  /* ── PAGE ── */
+  .page { max-width: 940px; margin: 0 auto; padding: 0 44px 70px; }
+
+  /* ── SECTION HEADERS ── */
+  .sec-hdr {
+    display: flex; align-items: baseline; gap: 12px;
+    margin: 48px 0 22px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .sec-hdr h2 { font-size: 20px; font-weight: 700; color: var(--gray); }
+  .sec-num {
+    font-size: 10px; font-weight: 700; letter-spacing: 3px;
+    color: var(--gray-mid); text-transform: uppercase;
+  }
+
+  /* ── PROSE ── */
+  p { margin-bottom: 12px; }
+  p:last-child { margin-bottom: 0; }
+  strong { font-weight: 600; }
+
+  /* ── CALLOUTS ── */
+  .callout {
+    padding: 14px 18px; border-radius: 6px;
+    border-left: 4px solid; margin: 16px 0; font-size: 13px;
+  }
+  .callout strong { display: block; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 5px; }
+  .c-red    { background: var(--red-lt);    border-color: var(--red);    }  .c-red strong    { color: var(--red); }
+  .c-amber  { background: var(--amber-lt);  border-color: var(--amber);  }  .c-amber strong  { color: var(--amber); }
+  .c-blue   { background: var(--blue-lt);   border-color: var(--blue);   }  .c-blue strong   { color: var(--blue); }
+  .c-green  { background: var(--green-lt);  border-color: var(--green);  }  .c-green strong  { color: var(--green); }
+  .c-purple { background: var(--purple-lt); border-color: var(--purple); }  .c-purple strong { color: var(--purple); }
+  .c-teal   { background: var(--teal-lt);   border-color: var(--teal);   }  .c-teal strong   { color: var(--teal); }
+
+  /* ── DIAGRAMS ── */
+  .dbox { background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 22px 0; }
+  .dbox-title {
+    padding: 9px 16px; background: var(--gray-lt); border-bottom: 1px solid var(--border);
+    font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+  }
+  .dbox-body { padding: 10px; }
+
+  /* ── RACI TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+  thead tr { background: var(--gray); color: #fff; }
+  thead th { padding: 9px 14px; text-align: left; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; }
+  tbody tr:nth-child(even) { background: var(--gray-lt); }
+  tbody tr:hover { background: var(--blue-lt); }
+  tbody td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 12.5px; }
+  .r-cell { text-align: center; font-weight: 700; font-size: 12px; }
+  .rR { color: var(--red); } .rA { color: var(--amber); } .rC { color: var(--blue); } .rI { color: var(--gray-mid); }
+  .team-vm     { color: var(--green); font-weight: 600; }
+  .team-ir     { color: var(--red); font-weight: 600; }
+  .team-cti    { color: var(--purple); font-weight: 600; }
+  .team-soc    { color: var(--blue); font-weight: 600; }
+  .team-net    { color: var(--teal); font-weight: 600; }
+  .team-appd   { color: var(--amber); font-weight: 600; }
+
+  /* ── PHASE CARDS ── */
+  .phase { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; background: #fff; }
+  .phase-hdr {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px; cursor: pointer; user-select: none;
+    transition: background 0.15s;
+  }
+  .phase-hdr:hover { background: var(--gray-lt); }
+  .phase-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+  }
+  .pb-red    { background: var(--red-lt);    color: var(--red);    border: 1px solid #F1948A; }
+  .pb-amber  { background: var(--amber-lt);  color: var(--amber);  border: 1px solid #F8C471; }
+  .pb-blue   { background: var(--blue-lt);   color: var(--blue);   border: 1px solid #7FB3D3; }
+  .pb-green  { background: var(--green-lt);  color: var(--green);  border: 1px solid #82E0AA; }
+  .pb-purple { background: var(--purple-lt); color: var(--purple); border: 1px solid #C39BD3; }
+  .phase-title { font-size: 15px; font-weight: 600; color: var(--gray); flex: 1; }
+  .phase-time  { font-size: 12px; color: var(--gray-mid); white-space: nowrap; }
+  .chevron { font-size: 11px; color: var(--gray-mid); transition: transform 0.2s; }
+  .chevron.open { transform: rotate(180deg); }
+  .phase-body { display: none; border-top: 1px solid var(--border); }
+  .phase-body.open { display: block; }
+
+  /* ── STEPS ── */
+  .step { display: flex; }
+  .step-l { width: 52px; min-width: 52px; display: flex; flex-direction: column; align-items: center; padding-top: 16px; }
+  .step-dot {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid var(--border); background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--muted); flex-shrink: 0; z-index: 1;
+  }
+  .step-dot.active { border-color: var(--blue); color: var(--blue); background: var(--blue-lt); }
+  .step-line { width: 1px; flex: 1; background: var(--border); margin-top: 4px; }
+  .step:last-child .step-line { display: none; }
+  .step-r { flex: 1; padding: 14px 20px 14px 8px; border-bottom: 1px solid var(--gray-lt); }
+  .step:last-child .step-r { border-bottom: none; }
+  .step-title { font-size: 13px; font-weight: 600; color: var(--gray); margin-bottom: 4px; }
+  .step-who { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+  .step-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 8px; }
+  .step-desc:last-child { margin-bottom: 0; }
+
+  /* ── WHO BADGES ── */
+  .who {
+    font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+    letter-spacing: 0.5px; white-space: nowrap;
+  }
+  .who-ir     { background: #FDECEA; color: var(--red);    border: 1px solid #F1948A; }
+  .who-vm     { background: var(--green-lt); color: var(--green);  border: 1px solid #82E0AA; }
+  .who-cti    { background: var(--purple-lt); color: var(--purple); border: 1px solid #C39BD3; }
+  .who-soc    { background: var(--blue-lt); color: var(--blue);   border: 1px solid #7FB3D3; }
+  .who-net    { background: var(--teal-lt); color: var(--teal);   border: 1px solid #76D7C4; }
+  .who-appd   { background: var(--amber-lt); color: var(--amber);  border: 1px solid #F8C471; }
+  .who-mgmt   { background: #F4F6F7; color: var(--gray);   border: 1px solid #BDC3C7; }
+
+  /* ── CODE ── */
+  pre {
+    background: #1C2833; color: #A9CCE3;
+    font-family: var(--mono); font-size: 11.5px; line-height: 1.65;
+    padding: 12px 16px; border-radius: 5px; overflow-x: auto; margin: 8px 0;
+  }
+  pre .cm { color: #5D6D7E; } pre .kw { color: #82E0AA; } pre .vl { color: #F1948A; }
+  code {
+    font-family: var(--mono); font-size: 11.5px;
+    background: #EBF5FB; color: #1A5276; padding: 1px 5px; border-radius: 3px;
+  }
+
+  /* ── TEAM GRID ── */
+  .team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+  .team-card {
+    padding: 14px 16px; border: 1px solid var(--border); border-radius: 6px;
+    background: #fff; border-top: 3px solid;
+  }
+  .team-card h4 { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+  .team-card ul { list-style: none; padding: 0; }
+  .team-card ul li { font-size: 12px; color: var(--muted); padding: 2px 0 2px 12px; position: relative; }
+  .team-card ul li::before { content: '·'; position: absolute; left: 0; color: var(--border); font-size: 16px; line-height: 1; }
+
+  /* ── TIMELINE ── */
+  .timeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 18px 0; }
+  .tl-col { text-align: center; }
+  .tl-head { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .tl-box { padding: 8px; border-radius: 6px; font-size: 11px; line-height: 1.5; }
+
+  /* ── IOC TABLE ── */
+  .mono-cell { font-family: var(--mono); font-size: 11px; color: var(--red); }
+
+  /* ── FOOTER ── */
+  .doc-footer {
+    margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; font-size: 11px; color: var(--gray-mid);
+  }
+
+  @media print {
+    .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .phase-body { display: block !important; }
+    .chevron { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════ COVER ══════ -->
+<div class="cover">
+  <div class="cover-eyebrow">Cyber Incident Response · Financial Institution · Confidential</div>
+  <h1>Critical <em>Vulnerability</em><br>as Cyber Incident — Playbook</h1>
+  <p class="cover-desc">
+    A generalized incident response framework for triggering a parallel cyber investigation track
+    when a critical, actively-exploited vulnerability is confirmed present in the bank's environment.
+    Designed so the Vulnerability Management team owns detection, scanning, and remediation
+    while Incident Response coordinates broader investigation and mitigation.
+  </p>
+  <div class="cover-chips">
+    <div class="chip"><strong>Trigger: </strong>CISA KEV · CVSS ≥ 9.0 · confirmed bank exposure</div>
+    <div class="chip"><strong>Aligned to: </strong>NIST SP 800-61r3 · CSF 2.0 · FFIEC · NY DFS Part 500</div>
+    <div class="chip"><strong>Teams: </strong>IR · VM · CTI · SOC · Network · AppDefense</div>
+    <div class="chip"><strong>Reference CVEs: </strong>MOVEit · Citrix NetScaler · Ivanti · Fortinet · Log4Shell · PAN-OS</div>
+    <div class="chip"><strong>Version: </strong>1.1 · Updated 2026-05-14 · Top-6 CVE gap analysis applied</div>
+  </div>
+</div>
+
+<div class="page">
+
+<!-- ══════ SECTION 1: CONCEPT ══════ -->
+<div class="sec-hdr"><span class="sec-num">Section 1</span><h2>The Core Concept: Two Parallel Tracks</h2></div>
+
+<p>
+  Traditional vulnerability management treats a critical CVE as a patching problem. For a bank,
+  a critical vulnerability with <strong>known in-the-wild exploits</strong> and <strong>confirmed presence</strong>
+  in your environment is also a <strong>cyber incident</strong> — because the attacker may have already
+  used the window between disclosure and your patch.
+</p>
+<p>
+  The key insight is that patching and incident response are <em>not</em> the same activity and
+  should not be owned by the same team simultaneously. Think of it like a hospital that discovers
+  a contaminated blood supply: the clinical team focuses on identifying affected patients and
+  administering treatment (VM = scanning, patching, re-scanning), while a separate investigation
+  team determines whether patients were harmed and contains the damage (IR = compromise assessment,
+  threat hunt, containment, evidence preservation).
+</p>
+<p>
+  <strong>These tracks run in parallel — they do not block each other.</strong> Patching does not
+  wait for IR to finish. IR investigation does not wait for patching to complete.
+</p>
+
+<div class="callout c-amber">
+  <strong>When does this playbook activate?</strong>
+  All three conditions must be met: (1) CVE is on CISA KEV or has confirmed active exploitation
+  in threat intel feeds; (2) CVSS base score ≥ 9.0 or vendor severity = Critical; and
+  (3) VM team has confirmed the bank has one or more exposed assets. If conditions 1 and 2 are
+  met but exposure is unconfirmed, activate a watchlist posture while VM scans.
+</div>
+
+<!-- ══════ SECTION 2: TEAMS ══════ -->
+<div class="sec-hdr"><span class="sec-num">Section 2</span><h2>Team Roles &amp; Responsibilities</h2></div>
+
+<div class="team-grid">
+  <div class="team-card" style="border-top-color:var(--red)">
+    <h4 style="color:var(--red)">🔴 Incident Response (IR)</h4>
+    <ul>
+      <li>Incident commander for the IR track</li>
+      <li>Opens and owns the incident ticket</li>
+      <li>Coordinates all non-VM response teams</li>
+      <li>Drives compromise assessment workstreams</li>
+      <li>Leadership communication and escalation</li>
+      <li>Evidence preservation and timeline</li>
+      <li>Closure and lessons learned</li>
+    </ul>
+  </div>
+  <div class="team-card" style="border-top-color:var(--green)">
+    <h4 style="color:var(--green)">🟢 Vulnerability Management (VM)</h4>
+    <ul>
+      <li>Receives and assesses the advisory</li>
+      <li>Runs Tenable scans for exposure</li>
+      <li>Determines exploitability in bank context</li>
+      <li>Briefs IR on exposed asset inventory</li>
+      <li>Coordinates and tracks patching</li>
+      <li>Runs verification scans post-patch</li>
+      <li>Communicates patch status to IR</li>
+    </ul>
+  </div>
+  <div class="team-card" style="border-top-color:var(--purple)">
+    <h4 style="color:var(--purple)">🟣 Cyber Threat Intelligence (CTI)</h4>
+    <ul>
+      <li>Monitors threat actor targeting of sector</li>
+      <li>Provides IOCs, TTPs, actor attribution</li>
+      <li>Searches dark web / FS-ISAC for bank exposure</li>
+      <li>Produces threat assessment per CVE</li>
+      <li>Feeds threat hunt hypotheses to SOC</li>
+      <li>Notifies IR of new exploitation evidence</li>
+    </ul>
+  </div>
+  <div class="team-card" style="border-top-color:var(--blue)">
+    <h4 style="color:var(--blue)">🔵 Cyber Threat Response (SOC)</h4>
+    <ul>
+      <li>Monitors SIEM/EDR for exploitation IOCs</li>
+      <li>Executes threat hunts from CTI hypotheses</li>
+      <li>Investigates alerts on affected asset classes</li>
+      <li>Reviews authentication logs / sessions</li>
+      <li>Supports IR with log analysis and triage</li>
+      <li>Escalates confirmed indicators immediately</li>
+    </ul>
+  </div>
+  <div class="team-card" style="border-top-color:var(--teal)">
+    <h4 style="color:var(--teal)">🩵 Cloud &amp; Network Services (Net/FW)</h4>
+    <ul>
+      <li>Implements emergency network mitigations</li>
+      <li>Applies WAF rules, ACLs, firewall blocks</li>
+      <li>Restricts access to exposed services</li>
+      <li>Provides network telemetry to SOC/IR</li>
+      <li>Implements compensating controls</li>
+      <li>Supports isolation of compromised assets</li>
+    </ul>
+  </div>
+  <div class="team-card" style="border-top-color:var(--amber)">
+    <h4 style="color:var(--amber)">🟡 Cloud &amp; Application Defense (AppD)</h4>
+    <ul>
+      <li>Investigates specific appliances / platforms</li>
+      <li>Pulls and reviews appliance telemetry/logs</li>
+      <li>Validates configuration, hardening status</li>
+      <li>Implements application-layer compensating controls</li>
+      <li>Supports forensic analysis of affected hosts</li>
+      <li>Expertise on specific tech (Citrix, Palo Alto, etc.)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══════ SECTION 3: RACI ══════ -->
+<div class="sec-hdr"><span class="sec-num">Section 3</span><h2>RACI Matrix — By Activity</h2></div>
+
+<div class="callout c-blue">
+  <strong>How to read this table</strong>
+  <strong>R</strong> = Responsible (does the work) · <strong>A</strong> = Accountable (owns the outcome) ·
+  <strong>C</strong> = Consulted (input required) · <strong>I</strong> = Informed (kept updated)
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:34%">Activity</th>
+      <th style="width:10%">IR</th>
+      <th style="width:10%">VM</th>
+      <th style="width:10%">CTI</th>
+      <th style="width:10%">SOC</th>
+      <th style="width:10%">Net/FW</th>
+      <th style="width:10%">AppD</th>
+      <th style="width:6%">Mgmt</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td colspan="8" style="background:#1C2833;color:#A9CCE3;font-size:10px;font-weight:700;letter-spacing:2px;padding:6px 14px;">ADVISORY RECEIPT &amp; INITIAL ASSESSMENT</td></tr>
+    <tr><td>Receive and parse advisory / CISA KEV notification</td><td class="r-cell rA">A</td><td class="r-cell rR">R</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td></tr>
+    <tr><td>Determine exposure via Tenable scan</td><td class="r-cell rI">I</td><td class="r-cell rA rR" style="color:var(--green)">R/A</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td></tr>
+    <tr><td>Assess exploitability in bank context</td><td class="r-cell rC">C</td><td class="r-cell rA rR" style="color:var(--green)">R/A</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td></tr>
+    <tr><td>Decision: activate IR track</td><td class="r-cell rA rR" style="color:var(--red)">R/A</td><td class="r-cell rC">C</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rC">C</td></tr>
+    <tr><td>Brief leadership — initial notification</td><td class="r-cell rA rR" style="color:var(--red)">R/A</td><td class="r-cell rC">C</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td></tr>
+
+    <tr><td colspan="8" style="background:#1C2833;color:#A9CCE3;font-size:10px;font-weight:700;letter-spacing:2px;padding:6px 14px;">THREAT INTELLIGENCE &amp; THREAT HUNT</td></tr>
+    <tr><td>Produce CVE threat actor assessment</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rA rR" style="color:var(--purple)">R/A</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td></tr>
+    <tr><td>Search FS-ISAC / dark web for bank-specific exposure</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rA rR" style="color:var(--purple)">R/A</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td></tr>
+    <tr><td>Develop threat hunt hypotheses from CVE TTPs</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td><td class="r-cell rA rR" style="color:var(--purple)">R/A</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td></tr>
+    <tr><td>Execute SIEM/EDR threat hunt</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td><td class="r-cell rC">C</td><td class="r-cell rA rR" style="color:var(--blue)">R/A</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td></tr>
+    <tr><td>Review authentication / session logs on affected assets</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rA rR" style="color:var(--blue)">R/A</td><td class="r-cell rI">I</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td></tr>
+
+    <tr><td colspan="8" style="background:#1C2833;color:#A9CCE3;font-size:10px;font-weight:700;letter-spacing:2px;padding:6px 14px;">NETWORK &amp; ACCESS MITIGATION</td></tr>
+    <tr><td>Determine compensating controls (WAF, ACL, FW rules)</td><td class="r-cell rA">A</td><td class="r-cell rC">C</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td><td class="r-cell rR">R</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td></tr>
+    <tr><td>Implement emergency firewall / ACL blocks</td><td class="r-cell rA">A</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rR">R</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td></tr>
+    <tr><td>Investigate specific appliances (Citrix, Palo Alto, etc.)</td><td class="r-cell rA">A</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rC">C</td><td class="r-cell rC">C</td><td class="r-cell rR">R</td><td class="r-cell rI">I</td></tr>
+    <tr><td>Pull and analyze appliance telemetry / logs</td><td class="r-cell rA">A</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td><td class="r-cell rR">R</td><td class="r-cell rI">I</td></tr>
+
+    <tr><td colspan="8" style="background:#1C2833;color:#A9CCE3;font-size:10px;font-weight:700;letter-spacing:2px;padding:6px 14px;">REMEDIATION &amp; VERIFICATION</td></tr>
+    <tr><td>Coordinate and execute patching</td><td class="r-cell rI">I</td><td class="r-cell rA rR" style="color:var(--green)">R/A</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rC">C</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td></tr>
+    <tr><td>Verification / re-scan (Tenable)</td><td class="r-cell rI">I</td><td class="r-cell rA rR" style="color:var(--green)">R/A</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td></tr>
+    <tr><td>Determine incident closure criteria</td><td class="r-cell rA rR" style="color:var(--red)">R/A</td><td class="r-cell rC">C</td><td class="r-cell rC">C</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rC">C</td></tr>
+    <tr><td>Executive / regulatory reporting</td><td class="r-cell rA rR" style="color:var(--red)">R/A</td><td class="r-cell rC">C</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rI">I</td><td class="r-cell rC">C</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════ SECTION 4: THREAT CONTEXT ══════ -->
+<div class="sec-hdr"><span class="sec-num">Section 4</span><h2>Threat Context — Why Banks Are Primary Targets</h2></div>
+
+<p>
+  Financial institutions are disproportionately targeted during critical CVE exploitation windows.
+  Understanding why informs both the urgency of activation and the threat hunt hypotheses.
+</p>
+
+<div class="dbox">
+  <div class="dbox-title">Attacker timeline vs. bank response window</div>
+  <div class="dbox-body">
+    <svg width="100%" viewBox="0 0 860 200" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',sans-serif;">
+      <!-- Timeline spine -->
+      <line x1="40" y1="90" x2="820" y2="90" stroke="#D5D8DC" stroke-width="2"/>
+      <!-- Arrow -->
+      <polygon points="820,86 830,90 820,94" fill="#D5D8DC"/>
+
+      <!-- Attacker events (top) -->
+      <!-- T0: Disclosure -->
+      <circle cx="80" cy="90" r="7" fill="#1C2833"/>
+      <line x1="80" y1="83" x2="80" y2="48" stroke="#1C2833" stroke-width="1.5" stroke-dasharray="3 2"/>
+      <text x="80" y="40" text-anchor="middle" font-size="11" font-weight="700" fill="#1C2833">T+0h</text>
+      <text x="80" y="28" text-anchor="middle" font-size="10" fill="#566573">CVE disclosed</text>
+
+      <!-- T+4h: PoC -->
+      <circle cx="200" cy="90" r="7" fill="#C0392B"/>
+      <line x1="200" y1="83" x2="200" y2="48" stroke="#C0392B" stroke-width="1.5" stroke-dasharray="3 2"/>
+      <text x="200" y="40" text-anchor="middle" font-size="11" font-weight="700" fill="#C0392B">T+4h</text>
+      <text x="200" y="28" text-anchor="middle" font-size="10" fill="#C0392B">PoC published</text>
+
+      <!-- T+24h: Mass scanning -->
+      <circle cx="340" cy="90" r="7" fill="#C0392B"/>
+      <line x1="340" y1="83" x2="340" y2="48" stroke="#C0392B" stroke-width="1.5" stroke-dasharray="3 2"/>
+      <text x="340" y="40" text-anchor="middle" font-size="11" font-weight="700" fill="#C0392B">T+24h</text>
+      <text x="340" y="28" text-anchor="middle" font-size="10" fill="#C0392B">Mass scanning begins</text>
+
+      <!-- T+48h: Targeted exploitation -->
+      <circle cx="480" cy="90" r="9" fill="#C0392B"/>
+      <line x1="480" y1="83" x2="480" y2="48" stroke="#C0392B" stroke-width="2" stroke-dasharray="3 2"/>
+      <text x="480" y="40" text-anchor="middle" font-size="11" font-weight="700" fill="#C0392B">T+48h</text>
+      <text x="480" y="28" text-anchor="middle" font-size="10" fill="#C0392B">Targeted exploitation</text>
+
+      <!-- Bank response events (bottom) -->
+      <!-- T+2h: Advisory received by VM -->
+      <circle cx="150" cy="90" r="6" fill="#1E8449"/>
+      <line x1="150" y1="97" x2="150" y2="135" stroke="#1E8449" stroke-width="1.5" stroke-dasharray="3 2"/>
+      <text x="150" y="148" text-anchor="middle" font-size="10" fill="#1E8449">T+2–8h: Advisory received</text>
+      <text x="150" y="161" text-anchor="middle" font-size="10" fill="#566573">VM scans begin</text>
+
+      <!-- T+8h: Exposure confirmed -->
+      <circle cx="280" cy="90" r="6" fill="#1E8449"/>
+      <line x1="280" y1="97" x2="280" y2="135" stroke="#1E8449" stroke-width="1.5" stroke-dasharray="3 2"/>
+      <text x="280" y="148" text-anchor="middle" font-size="10" fill="#1E8449">T+8–24h: Exposure confirmed</text>
+      <text x="280" y="161" text-anchor="middle" font-size="10" fill="#B03030">IR track ACTIVATES</text>
+
+      <!-- T+24-72h: Patch deployed -->
+      <circle cx="640" cy="90" r="6" fill="#2980B9"/>
+      <line x1="640" y1="97" x2="640" y2="135" stroke="#2980B9" stroke-width="1.5" stroke-dasharray="3 2"/>
+      <text x="640" y="148" text-anchor="middle" font-size="10" fill="#2980B9">T+24–72h: Patch cycle</text>
+      <text x="640" y="161" text-anchor="middle" font-size="10" fill="#566573">VM re-scan · IR continues</text>
+
+      <!-- EXPOSURE WINDOW BOX -->
+      <rect x="280" y="70" width="360" height="38" rx="4" fill="#FDECEA" stroke="#E74C3C" stroke-width="0.5" opacity="0.7"/>
+      <text x="460" y="84" text-anchor="middle" font-size="10" font-weight="700" fill="#C0392B">EXPLOIT WINDOW</text>
+      <text x="460" y="98" text-anchor="middle" font-size="9" fill="#C0392B">Bank exposed &amp; potentially targeted before patch deployed</text>
+
+      <!-- Timeline label -->
+      <text x="835" y="94" font-size="10" fill="#95A5A6">time →</text>
+    </svg>
+  </div>
+</div>
+
+<div class="callout c-red">
+  <strong>The "exploit window" problem for financial institutions</strong>
+  Based on current threat intelligence, vulnerabilities appear in the CISA KEV catalog an average of
+  42 days after public disclosure — but exploitation often begins within hours of PoC publication.
+  Financial institutions face scanning within 24 hours, targeted exploitation within 48 hours.
+  Ransomware affiliates, Initial Access Brokers, and nation-state actors all specifically prioritize
+  financial sector targets. A valid session token from a NetScaler appliance is a commodity item
+  on criminal markets within days of exploitation becoming available.
+</div>
+
+<!-- ══════ SECTION 5: WORKFLOW DIAGRAM ══════ -->
+<div class="sec-hdr"><span class="sec-num">Section 5</span><h2>Parallel Track Workflow</h2></div>
+
+<div class="dbox">
+  <div class="dbox-title">VM track vs. IR track — parallel execution</div>
+  <div class="dbox-body">
+    <svg width="100%" viewBox="0 0 860 420" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',sans-serif;">
+      <defs>
+        <marker id="a-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#1E8449" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="a-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#C0392B" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="a-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#2471A3" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="a-d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#95A5A6" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- ADVISORY trigger box -->
+      <rect x="310" y="14" width="240" height="44" rx="6" fill="#1C2833" stroke="#1C2833"/>
+      <text x="430" y="33" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Advisory / CISA KEV received</text>
+      <text x="430" y="50" text-anchor="middle" font-size="10" fill="#95A5A6">VM team receives · assesses · scans</text>
+
+      <!-- Decision diamond -->
+      <polygon points="430,80 510,108 430,136 350,108" fill="#FEF8EE" stroke="#D4850A" stroke-width="1.5"/>
+      <text x="430" y="104" text-anchor="middle" font-size="11" font-weight="700" fill="#B8690A">Bank exposed?</text>
+      <text x="430" y="120" text-anchor="middle" font-size="10" fill="#B8690A">CVSS ≥9 + KEV</text>
+
+      <!-- No branch → right -->
+      <line x1="510" y1="108" x2="600" y2="108" stroke="#95A5A6" stroke-width="1.5" marker-end="url(#a-d)"/>
+      <rect x="604" y="90" width="130" height="36" rx="5" fill="#F4F6F7" stroke="#D5D8DC"/>
+      <text x="669" y="106" text-anchor="middle" font-size="10" fill="#566573">Watchlist / monitor</text>
+      <text x="669" y="120" text-anchor="middle" font-size="10" fill="#566573">Re-scan on update</text>
+      <text x="554" y="101" text-anchor="middle" font-size="9" fill="#95A5A6">No / not yet</text>
+
+      <!-- Yes branch → down, splitting -->
+      <line x1="430" y1="136" x2="430" y2="158" stroke="#C0392B" stroke-width="1.5" marker-end="url(#a-r)"/>
+      <text x="444" y="151" font-size="9" fill="#C0392B">Yes — activate</text>
+
+      <!-- Split label -->
+      <text x="430" y="175" text-anchor="middle" font-size="10" font-weight="700" fill="#1C2833">IR track opens ↓ · VM track continues ↓</text>
+      <line x1="100" y1="180" x2="750" y2="180" stroke="#D5D8DC" stroke-width="0.5"/>
+
+      <!-- ── VM TRACK (left) ── -->
+      <text x="200" y="200" text-anchor="middle" font-size="10" font-weight="700" fill="#1E8449" letter-spacing="2">VM TRACK (Tenable)</text>
+      <rect x="80" y="210" width="240" height="36" rx="5" fill="#EDFAF4" stroke="#1E8449" stroke-width="1"/>
+      <text x="200" y="228" text-anchor="middle" font-size="11" font-weight="600" fill="#1A6B3A">1. Full scan — all asset classes</text>
+      <text x="200" y="242" text-anchor="middle" font-size="10" fill="#1A6B3A">Tenable · identify all exposed instances</text>
+      <line x1="200" y1="246" x2="200" y2="264" stroke="#1E8449" stroke-width="1.5" marker-end="url(#a-g)"/>
+
+      <rect x="80" y="264" width="240" height="36" rx="5" fill="#EDFAF4" stroke="#1E8449" stroke-width="1"/>
+      <text x="200" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#1A6B3A">2. Prioritize &amp; coordinate patching</text>
+      <text x="200" y="296" text-anchor="middle" font-size="10" fill="#1A6B3A">Internet-facing → internal → dev/test</text>
+      <line x1="200" y1="300" x2="200" y2="318" stroke="#1E8449" stroke-width="1.5" marker-end="url(#a-g)"/>
+
+      <rect x="80" y="318" width="240" height="36" rx="5" fill="#EDFAF4" stroke="#1E8449" stroke-width="1"/>
+      <text x="200" y="336" text-anchor="middle" font-size="11" font-weight="600" fill="#1A6B3A">3. Re-scan — verify remediation</text>
+      <text x="200" y="350" text-anchor="middle" font-size="10" fill="#1A6B3A">Tenable confirmation · report to IR</text>
+      <line x1="200" y1="354" x2="200" y2="372" stroke="#1E8449" stroke-width="1.5" marker-end="url(#a-g)"/>
+
+      <rect x="80" y="372" width="240" height="32" rx="5" fill="#1E8449"/>
+      <text x="200" y="390" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">VM track complete</text>
+      <text x="200" y="402" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.7)">Notifies IR: all clear on patching</text>
+
+      <!-- ── IR TRACK (right) ── -->
+      <text x="650" y="200" text-anchor="middle" font-size="10" font-weight="700" fill="#C0392B" letter-spacing="2">IR TRACK</text>
+      <rect x="530" y="210" width="240" height="36" rx="5" fill="#FDF0EF" stroke="#C0392B" stroke-width="1"/>
+      <text x="650" y="228" text-anchor="middle" font-size="11" font-weight="600" fill="#B03030">1. Open incident · assemble team</text>
+      <text x="650" y="242" text-anchor="middle" font-size="10" fill="#B03030">CTI brief · SOC hunting · AppD triage</text>
+      <line x1="650" y1="246" x2="650" y2="264" stroke="#C0392B" stroke-width="1.5" marker-end="url(#a-r)"/>
+
+      <rect x="530" y="264" width="240" height="36" rx="5" fill="#FDF0EF" stroke="#C0392B" stroke-width="1"/>
+      <text x="650" y="282" text-anchor="middle" font-size="11" font-weight="600" fill="#B03030">2. Threat hunt + appliance review</text>
+      <text x="650" y="296" text-anchor="middle" font-size="10" fill="#B03030">IOC search · session review · telemetry</text>
+      <line x1="650" y1="300" x2="650" y2="318" stroke="#C0392B" stroke-width="1.5" marker-end="url(#a-r)"/>
+
+      <rect x="530" y="318" width="240" height="36" rx="5" fill="#FDF0EF" stroke="#C0392B" stroke-width="1"/>
+      <text x="650" y="336" text-anchor="middle" font-size="11" font-weight="600" fill="#B03030">3. Network mitigation + containment</text>
+      <text x="650" y="350" text-anchor="middle" font-size="10" fill="#B03030">WAF rules · ACLs · isolation if needed</text>
+      <line x1="650" y1="354" x2="650" y2="372" stroke="#C0392B" stroke-width="1.5" marker-end="url(#a-r)"/>
+
+      <rect x="530" y="372" width="240" height="32" rx="5" fill="#C0392B"/>
+      <text x="650" y="390" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">Declare closure when criteria met</text>
+      <text x="650" y="402" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.7)">Patched + no compromise evidence</text>
+
+      <!-- Sync arrows between tracks -->
+      <line x1="320" y1="230" x2="528" y2="230" stroke="#95A5A6" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#a-d)"/>
+      <text x="424" y="226" text-anchor="middle" font-size="9" fill="#95A5A6">asset inventory</text>
+
+      <line x1="320" y1="336" x2="528" y2="336" stroke="#95A5A6" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#a-d)"/>
+      <text x="424" y="332" text-anchor="middle" font-size="9" fill="#95A5A6">patch status updates</text>
+
+      <!-- Down from advisory to split -->
+      <line x1="430" y1="58" x2="430" y2="78" stroke="#D4850A" stroke-width="1.5" marker-end="url(#a-b)"/>
+    </svg>
+  </div>
+</div>
+
+<!-- ══════ SECTION 6: PHASES ══════ -->
+<div class="sec-hdr"><span class="sec-num">Section 6</span><h2>IR Response Phases — Detailed Steps</h2></div>
+
+<div class="callout c-teal">
+  <strong>Scope of this section</strong>
+  These phases cover the IR team's responsibilities. VM patching activities (Tenable scanning,
+  patch deployment, verification scans) run in parallel and are governed by the VM team's own process.
+  IR coordinates with VM but does not own or block patching.
+</div>
+
+<!-- PHASE 0 -->
+<div class="phase">
+  <div class="phase-hdr" onclick="tog(this)">
+    <span class="phase-badge pb-amber">Phase 0</span>
+    <span class="phase-title">Activation — trigger criteria and incident opening</span>
+    <span class="phase-time">⏱ T+0 to T+2 hours after VM confirms exposure</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="phase-body">
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">0.1</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Verify activation criteria are met</div>
+        <div class="step-who">
+          <span class="who who-ir">IR</span><span class="who who-vm">VM</span>
+        </div>
+        <div class="step-desc">
+          All three must be true to activate this playbook:
+          <br>① CVE is on CISA KEV catalog <em>or</em> has confirmed active exploitation per vendor advisory / CTI feeds
+          <br>② CVSS base score ≥ 9.0 <em>or</em> vendor severity = Critical
+          <br>③ VM team has confirmed ≥1 bank asset is exposed (Tenable scan positive <em>or</em> asset inventory match)
+          <br><br>
+          If ① and ② are true but ③ is pending: activate <strong>watchlist posture</strong> — CTI monitoring, SOC alert tuning, no full IR track yet.
+        </div>
+        <div class="step-desc">
+          <strong>⚠ Library-level CVE exception (e.g. Log4Shell class):</strong> For CVEs in embedded libraries or frameworks (Java, Python packages, JavaScript runtimes), Tenable infrastructure scans may return false negatives because the vulnerability lives inside an application's transitive dependency — invisible to a network or host scan. If the CVE affects a widely-embedded library, activate the IR track based on criteria ① and ② alone, then run a parallel SBOM-driven discovery track (see Phase 1.5) rather than waiting for Tenable to confirm exposure. Do not treat a negative Tenable result as definitive for library-level CVEs.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">0.2</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Open the cyber incident ticket</div>
+        <div class="step-who"><span class="who who-ir">IR</span></div>
+        <div class="step-desc">
+          Open a P1/Critical incident in the incident management system. Title convention:
+          <code>CRITVAL-[CVE-ID]-[YYYY-MM-DD]</code> (e.g. <code>CRITVAL-CVE-2026-3055-2026-05-14</code>).
+          Set severity based on exposure breadth: internet-facing = P1, internal-only = P2.
+          Link the VM tracking ticket as a related record — they are sibling tickets, not parent/child.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">0.3</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Send initial leadership notification</div>
+        <div class="step-who"><span class="who who-ir">IR</span><span class="who who-mgmt">Mgmt</span></div>
+        <div class="step-desc">
+          Notify CISO, relevant business line security officers, and enterprise risk within 2 hours of incident open.
+          Initial notification should include: CVE ID, affected technology, number of exposed assets (from VM),
+          current patch status, and whether active exploitation has been observed at the bank.
+          Use the standard critical incident notification template.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">0.4</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Stand up the response team — initial bridge / war room</div>
+        <div class="step-who">
+          <span class="who who-ir">IR</span><span class="who who-cti">CTI</span>
+          <span class="who who-soc">SOC</span><span class="who who-appd">AppD</span>
+          <span class="who who-net">Net/FW</span>
+        </div>
+        <div class="step-desc">
+          Convene within 2 hours of activation. IR briefs the following using VM's exposure report:
+          asset classes affected, network location (internet-facing vs. internal), business criticality,
+          known exploit availability, and CTI context on active threat actors targeting this CVE.
+          Assign workstream leads for each team and set cadence for updates (recommend every 4 hours while active).
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PHASE 1 -->
+<div class="phase">
+  <div class="phase-hdr" onclick="tog(this)">
+    <span class="phase-badge pb-red">Phase 1</span>
+    <span class="phase-title">Threat intelligence — understand who is exploiting this and how</span>
+    <span class="phase-time">⏱ T+0 to T+4 hours (runs continuously)</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="phase-body">
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">1.1</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Produce CVE threat actor and TTP assessment</div>
+        <div class="step-who"><span class="who who-cti">CTI</span></div>
+        <div class="step-desc">
+          Within 4 hours of activation, CTI delivers a written threat assessment covering:
+          known threat actor groups exploiting this CVE; MITRE ATT&amp;CK TTPs associated with exploitation;
+          post-exploitation behavior observed in the wild (lateral movement, persistence, exfiltration patterns);
+          industries and geographies being targeted; ransomware group involvement; and
+          whether Initial Access Brokers are selling access obtained via this CVE.
+        </div>
+        <div class="step-desc">
+          <strong>For Citrix NetScaler example:</strong> Assess ransomware affiliates following Citrix Bleed playbook
+          (session token theft → lateral movement → ransomware), state-sponsored actors,
+          and IABs marketing session tokens from financial sector targets.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">1.2</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Search for bank-specific exposure on external intelligence sources</div>
+        <div class="step-who"><span class="who who-cti">CTI</span></div>
+        <div class="step-desc">
+          Search FS-ISAC sharing channels for sector-specific intelligence. Check dark web markets
+          and forums for any mentions of the bank's domains, IP ranges, or brand.
+          Check threat sharing platforms (MISP, ISACs, vendor intelligence portals) for IOCs
+          specifically linked to the bank's ASN or IP space.
+          Check Shodan / Censys for the bank's internet-facing instances of the affected technology
+          (cross-reference with VM's asset inventory).
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">1.3</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Develop threat hunt hypotheses and IOC list for SOC</div>
+        <div class="step-who"><span class="who who-cti">CTI</span><span class="who who-soc">SOC</span></div>
+        <div class="step-desc">
+          Based on known exploitation TTPs, CTI produces a hunt hypothesis document for the SOC.
+          This should include specific log sources to query, SIEM search queries for known IOCs,
+          behavioral anomalies to hunt for (e.g. unusual session token usage, abnormal authentication
+          patterns, unexpected lateral movement from VPN gateway IPs), and EDR/NDR detection signatures.
+        </div>
+        <pre><span class="cm">-- Example hunt hypothesis: Citrix session token theft (CVE-2026-3055)</span>
+<span class="cm">-- Hypothesis: attacker obtained valid session token via memory leak,</span>
+<span class="cm">-- replayed it from an unusual source IP to authenticate as a legitimate user</span>
+<span class="cm">-- Hunt: Citrix auth sessions with source IP mismatch vs. user's historical IPs</span>
+<span class="kw">SELECT</span> username, src_ip, session_id, auth_time
+<span class="kw">FROM</span> citrix_auth_logs
+<span class="kw">WHERE</span> auth_time &gt;= '&lt;ADVISORY_DATE&gt;'
+  <span class="kw">AND</span> src_ip <span class="kw">NOT IN</span> (
+    <span class="kw">SELECT DISTINCT</span> src_ip <span class="kw">FROM</span> citrix_auth_logs
+    <span class="kw">WHERE</span> auth_time &lt; '&lt;ADVISORY_DATE&gt;' <span class="kw">AND</span> username = username
+  )</pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">1.4</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Monitor CTI continuously — update IR on new exploitation evidence</div>
+        <div class="step-who"><span class="who who-cti">CTI</span></div>
+        <div class="step-desc">
+          CTI provides daily updates to IR on: new exploitation PoCs published, new actor groups
+          observed exploiting the CVE, any bank-specific intelligence surfaced, and changes in
+          targeting patterns. If bank-specific evidence of targeting or compromise is identified,
+          CTI escalates to IR immediately — do not wait for scheduled update.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">1.5</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">SBOM-driven discovery — for library / embedded component CVEs (Log4Shell class)</div>
+        <div class="step-who"><span class="who who-vm">VM</span><span class="who who-appd">AppD</span><span class="who who-ir">IR</span></div>
+        <div class="step-desc">
+          When a CVE affects an embedded library (Apache Log4j2, Spring Framework, OpenSSL, etc.), infrastructure scanning alone is insufficient. The vulnerable component may exist as a JAR-within-JAR, a transitive Python dependency, or a statically linked binary — none of which are visible to Tenable's network fingerprinting. This creates a false-negative risk that is structurally different from appliance CVEs.
+        </div>
+        <div class="step-desc">
+          <strong>Parallel discovery tracks to run alongside Tenable:</strong>
+        </div>
+        <div class="step-desc">
+          <strong>Track A — SBOM query:</strong> If the bank maintains Software Bills of Materials for applications, query them for the affected component name and version range. SBOM coverage is often incomplete — treat absence from SBOM as unknown, not clean.
+        </div>
+        <div class="step-desc">
+          <strong>Track B — Build artifact scan:</strong> Run a library-aware scanner (e.g. Grype, Syft, OWASP Dependency-Check, or Tenable's SCA module if licensed) against application build artifacts, container images, and WAR/JAR archives in Artifact Registry and deployment pipelines. This surfaces transitive dependencies invisible to host scanning.
+        </div>
+        <div class="step-desc">
+          <strong>Track C — Application team self-declaration:</strong> IR sends a structured query to all application development teams: "Does your application include [library name] version [affected range] directly or as a dependency?" Allow 24 hours for response. Escalate non-responders to their engineering leads.
+        </div>
+        <div class="step-desc">
+          <strong>Track D — Network-based detection (secondary):</strong> For Log4Shell-class JNDI injection CVEs, the SOC can deploy detection rules looking for JNDI-related strings in HTTP request headers and URIs across WAF/NGFW logs — these signatures indicate active exploitation attempts regardless of whether the host is confirmed vulnerable.
+        </div>
+        <pre><span class="cm"># Track B example — scan container images with Grype for Log4j exposure:</span>
+<span class="kw">grype</span> <span class="vl">IMAGE_NAME:TAG</span> <span class="kw">--only-fixed</span> | <span class="kw">grep</span> -i "log4j\|log4shell\|CVE-2021-44228"
+
+<span class="cm"># Scan a local JAR/WAR archive:</span>
+<span class="kw">grype</span> <span class="vl">dir:/path/to/application/</span> | <span class="kw">grep</span> -i "log4j"
+
+<span class="cm"># OWASP Dependency-Check against Maven project:</span>
+<span class="kw">dependency-check</span> <span class="kw">--project</span> <span class="vl">BankApp</span> <span class="kw">--scan</span> <span class="vl">./target/</span> \
+  <span class="kw">--out</span> <span class="vl">./dc-report/</span> <span class="kw">--format</span> HTML</pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PHASE 2 -->
+<div class="phase">
+  <div class="phase-hdr" onclick="tog(this)">
+    <span class="phase-badge pb-red">Phase 2</span>
+    <span class="phase-title">Threat hunt &amp; appliance investigation — are we already compromised?</span>
+    <span class="phase-time">⏱ T+2 to T+24 hours (continues until closed)</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="phase-body">
+
+    <div class="callout c-red" style="margin:12px 20px 4px">
+      <strong>This is the most critical phase for financial institutions</strong>
+      The question is not just "are we patched?" but "were we exploited before patching?"
+      A bank may patch within 24 hours and still have a compromised appliance with
+      a persistent backdoor or stolen session tokens in active use. Patching removes the
+      vulnerability; only investigation determines whether the window was used.
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">2.1</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Execute SIEM/EDR threat hunt against exposed assets</div>
+        <div class="step-who"><span class="who who-soc">SOC</span><span class="who who-cti">CTI</span></div>
+        <div class="step-desc">
+          Using the CTI-provided hypotheses and IOC list, the SOC executes structured hunts across:
+          SIEM (authentication events, network connections, process execution on affected hosts),
+          EDR (process anomalies, file creation, persistence mechanisms on hosts behind the affected gateway),
+          NDR/NGFW (unusual outbound connections, lateral movement signatures, C2 beaconing patterns),
+          and email/DLP (credential exfiltration patterns).
+        </div>
+        <div class="step-desc">
+          Document all hunt results — both positive and negative findings. Negative findings with
+          documented methodology are evidence that we looked and did not find compromise, which is
+          important for closure decisions and any regulatory review.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">2.2</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Appliance-specific investigation — pull telemetry and logs</div>
+        <div class="step-who"><span class="who who-appd">AppD</span><span class="who who-ir">IR</span></div>
+        <div class="step-desc">
+          Cloud &amp; Application Defense investigates the specific technology affected.
+          The exact activities depend on the CVE type, but generally include:
+        </div>
+        <div class="step-desc">
+          <strong>For network gateway appliances (Citrix, Palo Alto, Ivanti, etc.):</strong>
+          Review full authentication logs for the exposure window; identify all sessions established
+          during the window; cross-reference session source IPs against threat intel;
+          check for configuration changes not authorized via change management;
+          review VPN session logs for unusual volume, duration, or off-hours access;
+          pull memory forensics if available; check for persistence mechanisms or backdoor users.
+        </div>
+        <div class="step-desc">
+          <strong>For server/application CVEs (Exchange, Apache, etc.):</strong>
+          Review web server access logs for exploit-pattern requests; check for webshells in web root;
+          review process execution logs for unusual spawned processes; check scheduled tasks and
+          startup items for persistence; review user/group changes.
+        </div>
+        <pre><span class="cm"># Citrix NetScaler example — pull ns.log for exploitation indicators:</span>
+<span class="kw">grep</span> -E "(SAML|SAMLRequest|AssertionConsumerService|NSC_TASS)" /var/nslog/ns.log |
+  <span class="kw">grep</span> -i "error\|overflow\|leak\|corrupt" &gt; citrix_anomalies.txt
+
+<span class="cm"># Check for unexpected admin account creation:</span>
+<span class="kw">grep</span> "USERADD\|group change\|adduser\|passwd" /var/nslog/ns.log |
+  <span class="kw">awk</span> -v date="&lt;ADVISORY_DATE&gt;" '$1 &gt;= date'
+
+<span class="cm"># Check active sessions with anomalous source IPs:</span>
+<span class="kw">nsconmsg</span> -d current -s 100 -g pepol | <span class="kw">grep</span> -v "&lt;known_internal_range&gt;"</pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">2.3</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Review authentication and session logs for anomalous activity</div>
+        <div class="step-who"><span class="who who-soc">SOC</span><span class="who who-appd">AppD</span></div>
+        <div class="step-desc">
+          For vulnerabilities that enable session hijacking or credential theft (e.g. Citrix Bleed class):
+          review all VPN/gateway sessions established after the CVE was publicly disclosed;
+          identify sessions from unusual geographies, unusual IP reputation, or outside business hours;
+          correlate session user identity with downstream system access (what did the session do?);
+          look for privileged account access immediately following gateway authentication.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">2.4</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Preserve forensic evidence</div>
+        <div class="step-who"><span class="who who-ir">IR</span><span class="who who-appd">AppD</span></div>
+        <div class="step-desc">
+          Before patching removes evidence: preserve appliance logs, memory dumps where available,
+          network flow data for the exposure window, and SIEM data for the affected asset scope.
+          Set log retention holds. If active compromise is suspected, do not patch before imaging —
+          coordinate with IR on forensic preservation requirements.
+        </div>
+        <div class="step-desc">
+          Note: for most critical CVEs where no active compromise is found, normal patching can
+          proceed. Forensic preservation is mandatory only if investigation reveals positive indicators.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">2.5</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Escalation criteria — from vulnerability response to active breach response</div>
+        <div class="step-who"><span class="who who-ir">IR</span><span class="who who-soc">SOC</span></div>
+        <div class="step-desc">
+          If any of the following are confirmed, immediately escalate to a full active breach
+          response (invoke the breach IR playbook in parallel with this one):
+        </div>
+        <div class="step-desc">
+          ① C2 beaconing or data exfiltration confirmed from an affected asset<br>
+          ② Unauthorized credential usage confirmed from appliance session logs<br>
+          ③ Webshell or persistence mechanism found on affected host<br>
+          ④ Lateral movement originating from an affected gateway or server<br>
+          ⑤ CTI confirms bank-specific data or credentials on criminal markets<br>
+          ⑥ Ransomware precursor activity detected (staging, credential harvesting at scale)
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">2.6</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Third-party / vendor exposure sub-track — activate when CVE affects a vendor-managed system</div>
+        <div class="step-who"><span class="who who-ir">IR</span><span class="who who-cti">CTI</span><span class="who who-mgmt">Mgmt</span></div>
+        <div class="step-desc">
+          <strong>Why this matters:</strong> The MOVEit campaign (CVE-2023-34362) breached Deutsche Bank, ING, Postbank, and Comdirect not through bank-owned assets but through a single third-party managed file transfer vendor all four shared. The bank's Tenable scan showed no exposure — because the vulnerability was in the vendor's environment, not the bank's. For CVEs affecting widely-used third-party software (managed file transfer, payroll processors, HR systems, print management, cloud storage), a parallel vendor sub-track is mandatory alongside the primary IR track.
+        </div>
+        <div class="step-desc">
+          <strong>Step 1 — Identify vendors in scope:</strong> IR queries Vendor/Third-Party Risk Management for all vendors using the affected software. Do not rely solely on the VM asset inventory — it covers bank-managed assets only. Ask: which vendors process or store bank data using this technology?
+        </div>
+        <div class="step-desc">
+          <strong>Step 2 — Notify and require attestation:</strong> IR (with Legal) sends formal written notification to each in-scope vendor requesting: (a) confirmation of whether they run the affected software version; (b) if yes, their patch status and timeline; (c) confirmation that bank data was not accessed or exfiltrated during their exposure window; (d) their own incident investigation results within an agreed timeframe (recommend 48 hours).
+        </div>
+        <div class="step-desc">
+          <strong>Step 3 — Scope the data exposure:</strong> Work with business lines to identify what data transits or resides with each in-scope vendor. Classify by sensitivity: PII, financial account data, payment data, credentials, internal documents. This classification drives regulatory notification assessment — a vendor breach of PII-containing MFT data may trigger notification obligations independently of whether the bank's own systems were compromised.
+        </div>
+        <div class="step-desc">
+          <strong>Step 4 — Validate vendor response:</strong> Do not accept vendor self-attestation alone for high-risk vendors. Request forensic evidence (patch confirmation, scan results, investigation report). For critical data processors, escalate to contract-level audit rights if vendor response is inadequate or delayed.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PHASE 3 -->
+<div class="phase">
+  <div class="phase-hdr" onclick="tog(this)">
+    <span class="phase-badge pb-blue">Phase 3</span>
+    <span class="phase-title">Network mitigation — compensating controls while patching proceeds</span>
+    <span class="phase-time">⏱ T+2 to T+8 hours</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="phase-body">
+
+    <div class="callout c-blue" style="margin:12px 20px 4px">
+      <strong>Compensating controls are not a substitute for patching</strong>
+      Network-layer controls reduce exposure but do not eliminate it. They run in parallel with VM's
+      patch cycle — not instead of it. IR coordinates with Network/FW to implement; VM continues patching.
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">3.1</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Determine appropriate compensating controls per CVE type</div>
+        <div class="step-who"><span class="who who-ir">IR</span><span class="who who-net">Net/FW</span><span class="who who-appd">AppD</span><span class="who who-cti">CTI</span></div>
+        <div class="step-desc">
+          The right control depends on the CVE type. IR coordinates a brief decision call with
+          Network/FW, AppD, and CTI to determine what is technically feasible and what residual
+          risk remains from each option. Document the decision and any business impact.
+        </div>
+        <table style="margin:8px 0; font-size:12px;">
+          <thead><tr><th>CVE type</th><th>Primary compensating control</th><th>Secondary</th></tr></thead>
+          <tbody>
+            <tr><td>Unauthenticated RCE on internet-facing appliance</td><td>Restrict access to trusted IP ranges; temporarily take offline if risk justifies</td><td>WAF virtual patch; IPS signature</td></tr>
+            <tr><td>Authentication bypass / session hijacking</td><td>Terminate all active sessions; force re-authentication; geofencing</td><td>Step-up MFA on downstream systems</td></tr>
+            <tr><td>Memory disclosure (e.g. Citrix Bleed class)</td><td>WAF rules to block crafted payloads; rate limit + monitor affected endpoints</td><td>Session invalidation; rotate session secrets</td></tr>
+            <tr><td>Privilege escalation (internal)</td><td>Restrict lateral movement paths; segment affected hosts; monitor for priv-esc patterns</td><td>Temporarily disable affected service</td></tr>
+            <tr><td>Supply chain / build pipeline</td><td>Block package versions in Artifactory; pause CI/CD (see supply chain playbook)</td><td>Credential rotation</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">3.2</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Implement emergency firewall / WAF / ACL rules</div>
+        <div class="step-who"><span class="who who-net">Net/FW</span><span class="who who-ir">IR</span></div>
+        <div class="step-desc">
+          Implement approved compensating controls through standard emergency change process.
+          Document all changes with CVE reference, change window, approver, and expected
+          business impact. All changes are reversible — document rollback procedure.
+        </div>
+        <pre><span class="cm"># Example: Restrict internet-facing Citrix appliance to known IP ranges</span>
+<span class="cm"># (Palo Alto NGFW rule — adapt to your firewall platform)</span>
+<span class="kw">set</span> rulebase security rules CITRIX-EMERGENCY-RESTRICT
+  source-address [ known-trusted-CIDRs ]
+  destination-address [ citrix-vip-addresses ]
+  application [ ssl web-browsing ]
+  action allow
+  description "CRITVAL-CVE-2026-3055 emergency restriction &lt;DATE&gt;"
+
+<span class="cm"># Rule positioned above general permit rule — more specific takes precedence</span>
+<span class="cm"># Companion deny rule blocks all other sources to same destination</span></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">3.3</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Invalidate sessions and force re-authentication if session hijacking is in scope</div>
+        <div class="step-who"><span class="who who-appd">AppD</span><span class="who who-net">Net/FW</span></div>
+        <div class="step-desc">
+          For CVEs that enable session token theft (Citrix Bleed class, authentication bypass):
+          terminate all active VPN/gateway sessions established before the compensating control was applied;
+          force re-authentication for all users;
+          if technically feasible, rotate session signing keys/secrets on the appliance;
+          implement step-up MFA for any privileged access that traverses the affected gateway.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PHASE 4 -->
+<div class="phase">
+  <div class="phase-hdr" onclick="tog(this)">
+    <span class="phase-badge pb-green">Phase 4</span>
+    <span class="phase-title">Ongoing monitoring, status reporting &amp; leadership updates</span>
+    <span class="phase-time">⏱ Throughout incident lifecycle</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="phase-body">
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">4.1</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Maintain incident status dashboard — updated every 4 hours</div>
+        <div class="step-who"><span class="who who-ir">IR</span></div>
+        <div class="step-desc">
+          IR maintains a live status summary covering: total exposed assets (from VM); patched count vs.
+          unpatched count; compensating controls in place; threat hunt status (in progress / complete / findings);
+          CTI assessment status; and any escalation decisions made. This is the single source of truth
+          for all stakeholders and is the basis for leadership updates.
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">4.2</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Leadership update cadence</div>
+        <div class="step-who"><span class="who who-ir">IR</span><span class="who who-mgmt">Mgmt</span></div>
+        <div class="step-desc">
+          <strong>T+0 (initial notification):</strong> CVE identified, exposure confirmed, IR track open, VM patching in progress<br>
+          <strong>T+24h:</strong> Patch progress, threat hunt status, compensating controls in place, no/possible/confirmed compromise<br>
+          <strong>T+72h:</strong> Comprehensive update — patching complete %, investigation findings, closure projection<br>
+          <strong>Immediate escalation trigger:</strong> any confirmed indicator of active compromise (see 2.5 escalation criteria)
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">4.3</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Regulatory notification assessment</div>
+        <div class="step-who"><span class="who who-ir">IR</span><span class="who who-mgmt">Mgmt</span></div>
+        <div class="step-desc">
+          A critical vulnerability with confirmed bank exposure requires a legal and compliance review
+          of notification obligations. For US banks: assess under GLBA, NY DFS Part 500 (72-hour notification
+          threshold for cybersecurity events), OCC guidance, and the FFIEC cybersecurity incident
+          notification final rule (36-hour notification for banking organizations for computer-security
+          incidents that rise to the level of a notification incident). This assessment should occur
+          at T+0 and be revisited if investigation findings change.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PHASE 5 -->
+<div class="phase">
+  <div class="phase-hdr" onclick="tog(this)">
+    <span class="phase-badge pb-purple">Phase 5</span>
+    <span class="phase-title">Closure criteria &amp; lessons learned</span>
+    <span class="phase-time">⏱ After remediation + investigation complete</span>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="phase-body">
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">5.1</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Closure criteria — all must be met to close the IR track</div>
+        <div class="step-who"><span class="who who-ir">IR</span><span class="who who-vm">VM</span><span class="who who-soc">SOC</span></div>
+        <div class="step-desc">
+          ① VM confirms 100% of exposed assets patched or formally risk-accepted with compensating controls<br>
+          ② SOC confirms threat hunt complete — all hypotheses tested, results documented<br>
+          ③ AppD confirms appliance investigation complete — no indicators of compromise found
+          <em>or</em> active breach response is open and managing any confirmed findings<br>
+          ④ CTI confirms no bank-specific intelligence on dark web or FS-ISAC channels<br>
+          ⑤ Compensating controls removed or formally accepted as permanent<br>
+          ⑥ Leadership sign-off on closure
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-l"><div class="step-dot">5.2</div><div class="step-line"></div></div>
+      <div class="step-r">
+        <div class="step-title">Post-incident review — within 5 business days of closure</div>
+        <div class="step-who"><span class="who who-ir">IR</span><span class="who who-vm">VM</span><span class="who who-cti">CTI</span></div>
+        <div class="step-desc">
+          PIR agenda: timeline from advisory receipt to closure; dwell time between exposure and
+          detection of exposure; patch deployment velocity vs. exploit window; effectiveness of
+          compensating controls; threat hunt coverage gaps; lessons for playbook improvement.
+          Key metric: how many days between CVE KEV listing and 100% bank remediation?
+          Target is ≤14 days for internet-facing assets.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════ SECTION 7: TECHNOLOGY-SPECIFIC GUIDANCE ══════ -->
+<div class="sec-hdr"><span class="sec-num">Section 7</span><h2>Technology-Specific Guidance — Top 6 CVE Families in Financial Services</h2></div>
+
+<p>Reference investigation, hunt, and mitigation notes for the six CVE families with the highest confirmed financial sector impact. Each section covers the specific team with domain expertise (AppD), the SOC hunt focus, and network mitigation. Use these as checklists alongside — not instead of — the vendor advisory for the specific CVE in scope.</p>
+
+<div class="dbox">
+  <div class="dbox-title">Citrix NetScaler ADC / Gateway (Citrix Bleed class — session memory disclosure)</div>
+  <div class="dbox-body" style="padding:16px 20px; font-size:13px; color:var(--muted)">
+    <strong style="color:var(--ink)">AppD investigation priorities:</strong> Pull <code>/var/nslog/ns.log</code> and <code>/var/nslog/httprequest.log</code> for the full exposure window. Review SAML authentication log entries for crafted payload indicators (malformed <code>SAMLRequest</code>, missing <code>AssertionConsumerServiceURL</code>). Identify all sessions established during the window. Cross-reference session tokens against downstream system access logs — what did each session do after it authenticated? Check for new or modified nsapimgr users, cron jobs, or shell scripts in <code>/nsconfig/</code>. Run integrity check against known-good NSconfig baseline.
+    <br><br>
+    <strong style="color:var(--ink)">SOC hunt focus:</strong> Authentication from unusual IPs for known users who authenticated via Citrix during the window. VPN sessions outside user's historical pattern (geography, hours, device). Privileged access to AD or internal systems immediately following Citrix auth. Lateral movement originating from the NetScaler internal interface IP range.
+    <br><br>
+    <strong style="color:var(--ink)">Network mitigation:</strong> Restrict access to trusted IP ranges; enable geofencing for gateway if not already active; terminate and invalidate all active ICA sessions; if SAML IDP mode is active and the CVE targets that path (e.g. CVE-2026-3055), temporarily disable SAML IDP or restrict to known IdP IPs.
+  </div>
+</div>
+
+<div class="dbox" style="margin-top:12px">
+  <div class="dbox-title">Palo Alto PAN-OS (RCE / authentication bypass)</div>
+  <div class="dbox-body" style="padding:16px 20px; font-size:13px; color:var(--muted)">
+    <strong style="color:var(--ink)">AppD investigation priorities:</strong> Export and review <code>system.log</code>, <code>threat.log</code>, and <code>traffic.log</code> for the exposure window. Check for GlobalProtect exploitation attempts. Look for unauthorized admin account creation or config changes outside change windows. Verify running config against known-good backup. Check for persistence mechanisms (malicious extensions, modified boot sequence).
+    <br><br>
+    <strong style="color:var(--ink)">SOC hunt focus:</strong> Unusual management plane access. New admin accounts not created via approved workflow. Config changes during non-change windows. Outbound connections from firewall management IP to unexpected destinations.
+    <br><br>
+    <strong style="color:var(--ink)">Network mitigation:</strong> Restrict management plane access to dedicated management network; disable Global Protect portal access if temporarily acceptable; apply vendor-provided temporary mitigations (interface disable, feature flags) per advisory.
+  </div>
+</div>
+
+<div class="dbox" style="margin-top:12px">
+  <div class="dbox-title">Ivanti Connect Secure / Policy Secure (authentication bypass / RCE chain)</div>
+  <div class="dbox-body" style="padding:16px 20px; font-size:13px; color:var(--muted)">
+    <div class="callout c-red" style="margin:0 0 12px 0">
+      <strong>Critical: Ivanti Integrity Checker Tool (ICT) is not sufficient</strong>
+      CISA confirmed in multiple incident response engagements that Ivanti's own ICT — the vendor-recommended forensic verification tool — <strong>failed to detect compromise</strong> on devices that were in fact compromised. A negative ICT result is not evidence of a clean system. For Ivanti CVEs with confirmed active exploitation, independent memory and disk forensics are required. CISA has recommended factory reset + config restore from a known-good backup rather than patch-in-place for actively exploited versions.
+    </div>
+    <strong style="color:var(--ink)">AppD investigation priorities:</strong> Review ICS diagnostic logs and admin audit logs at <code>/data/var/log/log.events</code> and <code>/var/log/</code>. Look for webshell deployment in <code>/data/var/dlbin/</code>, <code>/home/</code>, or the web root. Verify all VPN user sessions established during the exposure window — identify downstream systems accessed from each session. Check for SAML token forgery if SAML authentication is configured. Check for persistence via modified startup scripts, cron jobs, or LDAP plugin alterations. <strong>Run the ICT tool, but treat a negative result as unconfirmed — proceed with independent log and filesystem review regardless of ICT output.</strong>
+    <br><br>
+    <strong style="color:var(--ink)">SOC hunt focus:</strong> Post-exploitation tradecraft for Volt Typhoon / UNC5221 (nation-state) differs significantly from ransomware. Nation-state actors use living-off-the-land binaries, avoid dropping traditional malware, and conduct slow credential harvesting before lateral movement. Hunt for: slow, low-volume LDAP queries from VPN gateway IPs; credential access to AD at unusual hours; outbound connections to typosquatted domains or cloud storage providers not in the bank's allowlist; commands executed via web interfaces that bypass standard admin workflows.
+    <br><br>
+    <strong style="color:var(--ink)">Network mitigation:</strong> Restrict management interface access to dedicated out-of-band management network. Limit SSL VPN outbound internet connections to required services only (limits payload download and C2). If exploitation is confirmed or strongly suspected and a vendor patch is not yet available, <strong>CISA guidance recommends factory resetting the appliance and restoring configuration from a known-good backup taken before the vulnerability window</strong> — do not patch in place. Confirm with current vendor advisory.
+    <br><br>
+    <strong style="color:var(--ink)">Key CVEs in this family:</strong> CVE-2023-46805 + CVE-2024-21887 (auth bypass + cmd injection chain — no auth required when chained), CVE-2024-21893 (SSRF in SAML component), CVE-2025-22457 (actively exploited by China-nexus actors per Mandiant/Google Cloud).
+  </div>
+</div>
+
+<div class="dbox" style="margin-top:12px">
+  <div class="dbox-title">Fortinet FortiOS / FortiGate SSL-VPN (out-of-bounds write / RCE)</div>
+  <div class="dbox-body" style="padding:16px 20px; font-size:13px; color:var(--muted)">
+    <strong style="color:var(--ink)">AppD investigation priorities:</strong> Export and review <code>/var/log/log</code> (system events), FortiGate traffic log, and SSL-VPN log for the exposure window. If FortiAnalyzer is deployed, pull centralized logs from it — it retains more history and is harder for an attacker to tamper with than device-local logs. Check for unauthorized admin accounts in <code>config system admin</code>. Verify running config integrity against the last approved backup in FortiManager. Known persistence technique for FortiOS exploitation: attackers have modified the SSL-VPN filesystem (specifically <code>/data/etc/</code> and <code>/migadmin/</code>) to survive firmware upgrades — check for unexpected files in these paths even after patching.
+    <br><br>
+    <strong style="color:var(--ink)">SOC hunt focus:</strong> Unusual management plane access (HTTPS to port 443/8443 on the management IP from non-admin source IPs). New admin accounts or privilege changes not created via approved change workflow. Config changes committed during non-change windows. Outbound connections from the firewall management interface to unexpected IPs or domains. Post-exploitation lateral movement patterns: FortiGate compromise frequently precedes credential harvesting of AD, then ransomware staging on internal hosts.
+    <br><br>
+    <strong style="color:var(--ink)">Network mitigation:</strong> Disable SSL-VPN if not business-critical, or restrict access to specific trusted IP ranges. Restrict management interface access to dedicated OOB management VLAN — do not expose management plane to the internet or to production networks. Apply vendor-provided temporary mitigations (e.g. SSL-VPN portal interface disable) per advisory while patching. Note: CVE-2024-21762 specifically requires disabling SSL-VPN as a temporary workaround, not a WAF rule — confirm per advisory.
+    <br><br>
+    <strong style="color:var(--ink)">Key CVEs in this family:</strong> CVE-2024-21762 (CVSS 9.6 — out-of-bounds write, unauthenticated RCE via SSL-VPN), CVE-2023-27997 (heap buffer overflow in SSL-VPN, CVSS 9.8), CVE-2022-42475 (heap-based overflow, exploited by state-sponsored actors pre-patch). All on CISA KEV.
+  </div>
+</div>
+
+<div class="dbox" style="margin-top:12px">
+  <div class="dbox-title">Apache Log4j2 / Log4Shell (CVE-2021-44228) — embedded library class</div>
+  <div class="dbox-body" style="padding:16px 20px; font-size:13px; color:var(--muted)">
+    <div class="callout c-amber" style="margin:0 0 12px 0">
+      <strong>Tenable scans alone are insufficient for this CVE class</strong>
+      Log4Shell and similar library CVEs require SBOM-driven discovery (see Phase 1.5). A negative Tenable result does not rule out exposure — the vulnerable JAR may be nested inside an application WAR file or container layer not visible to a network scan.
+    </div>
+    <strong style="color:var(--ink)">AppD investigation priorities:</strong> Use library-aware scanners (Grype, Syft, OWASP Dependency-Check) against all container images, WAR/JAR archives, and build artifacts. Query application teams for self-declaration. Review web server and application logs for JNDI lookup strings in HTTP headers (User-Agent, X-Forwarded-For, Referer) — these are exploitation attempt indicators: <code>${jndi:ldap://</code>, <code>${jndi:dns://</code>, obfuscated variants using <code>${${lower:j}ndi:</code>. Check for unexpected outbound DNS and LDAP connections from application hosts during the exposure window, which indicate successful JNDI callback.
+    <br><br>
+    <strong style="color:var(--ink)">SOC hunt focus:</strong> JNDI injection strings in WAF / application logs. Outbound LDAP (port 389, 636) or RMI (port 1099) connections from application servers to external IPs — these indicate successful exploitation (JNDI callback). DNS queries to unusual domains from application servers. Unexpected process spawns from Java runtime processes (e.g. <code>java</code> spawning <code>curl</code>, <code>wget</code>, <code>bash</code>, or PowerShell).
+    <br><br>
+    <strong style="color:var(--ink)">Network mitigation:</strong> Block outbound LDAP, LDAPS, RMI, and DNS-over-HTTPS from application server network segments where not required — this breaks the JNDI callback mechanism and disrupts active exploitation even before patching. Deploy WAF rules to reject requests containing JNDI lookup patterns.
+    <br><br>
+    <strong style="color:var(--ink)">Long-tail risk:</strong> Log4Shell remains on CISA KEV years after initial disclosure. Financial institutions with complex application portfolios may have undiscovered instances in legacy systems, vendor software, or rarely-deployed internal tools. Re-run discovery whenever new application systems are onboarded.
+  </div>
+</div>
+
+<div class="dbox" style="margin-top:12px">
+  <div class="dbox-title">MOVEit Transfer / Managed File Transfer (CVE-2023-34362 and follow-on CVEs)</div>
+  <div class="dbox-body" style="padding:16px 20px; font-size:13px; color:var(--muted)">
+    <div class="callout c-red" style="margin:0 0 12px 0">
+      <strong>Primary risk is third-party / vendor exposure — not bank-owned assets</strong>
+      The Cl0p/FIN11 MOVEit campaign breached multiple major European banks not through bank-owned MOVEit instances, but through third-party vendors (payroll processors, data analytics firms, legal service providers) that ran MOVEit on behalf of the bank. Activate the third-party sub-track (Phase 2.6) immediately for any MFT CVE — do not wait for Tenable to confirm bank asset exposure.
+    </div>
+    <strong style="color:var(--ink)">AppD investigation priorities (for bank-owned MFT):</strong> Review MOVEit Transfer web application logs (<code>%ProgramFiles%\MOVEit Transfer\Logs\</code> on Windows) for POST requests to <code>/api/v1/token</code> or <code>/guestaccess.aspx</code> at unusual times. Check for unexpected webshell files in the MOVEit web root (<code>human2.aspx</code> and variants were deployed in the original campaign). Review all file transfer activity during the window — identify what data was accessed or downloaded. Check database for unexpected changes to system tables.
+    <br><br>
+    <strong style="color:var(--ink)">SOC hunt focus:</strong> Unusual SQL queries to MOVEit database from the application service account. Outbound data transfers significantly larger than baseline. Inbound connections to MOVEit from external IPs not in the expected user base. HTTP 200 responses to the affected endpoints from unexpected source IPs.
+    <br><br>
+    <strong style="color:var(--ink)">Third-party track (see Phase 2.6):</strong> Identify all vendors who process bank data using MOVEit or equivalent MFT software. Formal written notification to each vendor within 24 hours of CVE KEV listing. Scope data exposure by vendor — classify PII, financial data, payment data. This classification drives regulatory notification assessment independently of bank asset status.
+  </div>
+</div>
+
+<!-- ══════ SECTION 8: METRICS ══════ -->
+<div class="sec-hdr"><span class="sec-num">Section 8</span><h2>Key Metrics — IR Track Performance</h2></div>
+
+<table>
+  <thead><tr><th>Metric</th><th>Target</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Time from KEV listing to IR track activation</td><td>≤ 4 hours after VM confirms exposure</td><td>Starts when VM confirms exposure, not when advisory received</td></tr>
+    <tr><td>Time to leadership initial notification</td><td>≤ 2 hours after IR activation</td><td>Required for regulatory posture (NY DFS, FFIEC)</td></tr>
+    <tr><td>Time to compensating controls on internet-facing assets</td><td>≤ 8 hours after IR activation</td><td>Network/FW emergency change required</td></tr>
+    <tr><td>Time to vendor notification (third-party CVE)</td><td>≤ 24 hours of KEV listing</td><td>Written formal notification; 48h response SLA</td></tr>
+    <tr><td>SBOM/library discovery complete (embedded CVE)</td><td>≤ 24 hours of activation</td><td>Parallel to Tenable scan; AppD + application teams</td></tr>
+    <tr><td>Time to 100% patch — internet-facing assets</td><td>≤ 14 days (CISA BOD 22-01 benchmark)</td><td>VM metric; IR tracks and reports</td></tr>
+    <tr><td>Threat hunt completion (all hypotheses tested)</td><td>≤ 72 hours of IR activation</td><td>SOC metric; longer if IOCs are identified</td></tr>
+    <tr><td>Appliance investigation completion</td><td>≤ 48 hours of IR activation</td><td>AppD metric; extended if indicators found</td></tr>
+    <tr><td>IR track closure (no compromise found)</td><td>≤ 21 days for fully patched environment</td><td>Requires all closure criteria met (see Phase 5)</td></tr>
+    <tr><td>Post-incident review</td><td>Within 5 business days of closure</td><td>IR leads; all teams participate</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════ FOOTER ══════ -->
+<div class="doc-footer">
+  <span>Critical Vulnerability as Cyber Incident — IR Playbook v1.1 · Financial Institution</span>
+  <span>Aligned: NIST SP 800-61r3 · CSF 2.0 · FFIEC · NY DFS Part 500 · Updated: 2026-05-14</span>
+</div>
+
+</div><!-- /page -->
+
+<script>
+function tog(hdr) {
+  const body = hdr.nextElementSibling;
+  const ch = hdr.querySelector('.chevron');
+  const open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  ch.classList.toggle('open', !open);
+}
+// Auto-open Phase 0
+document.querySelector('.phase-hdr').click();
+</script>
+</body>
+</html>
