@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCP Supply Chain Attack — Incident Response Playbook</title>
+<style>
+  :root {
+    --red:    #C0392B; --red-lt:  #FDECEA; --red-mid: #E74C3C;
+    --amber:  #D68910; --amber-lt:#FEF9E7; --amber-mid:#F39C12;
+    --blue:   #1A5276; --blue-lt: #EBF5FB; --blue-mid: #2980B9;
+    --green:  #1E8449; --green-lt:#EAFAF1; --green-mid:#27AE60;
+    --gray:   #2C3E50; --gray-lt: #F4F6F7; --gray-mid: #95A5A6;
+    --ink:    #1C2833;
+    --muted:  #566573;
+    --border: #D5D8DC;
+    --mono:   'Courier New', monospace;
+    --sans:   Georgia, 'Times New Roman', serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--ink);
+    background: #FAFAFA;
+  }
+
+  /* ── COVER ── */
+  .cover {
+    background: var(--gray);
+    color: #fff;
+    padding: 52px 56px 44px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      -55deg,
+      transparent, transparent 40px,
+      rgba(255,255,255,0.02) 40px, rgba(255,255,255,0.02) 41px
+    );
+  }
+  .cover-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 14px;
+    position: relative;
+  }
+  .cover h1 {
+    font-family: var(--sans);
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .cover h1 span { color: #E74C3C; }
+  .cover-sub {
+    font-size: 15px;
+    color: rgba(255,255,255,0.65);
+    max-width: 580px;
+    position: relative;
+  }
+  .cover-meta {
+    display: flex;
+    gap: 32px;
+    margin-top: 32px;
+    position: relative;
+  }
+  .cover-meta-item { font-size: 12px; color: rgba(255,255,255,0.5); }
+  .cover-meta-item strong { display: block; color: #fff; font-size: 13px; margin-bottom: 2px; }
+
+  /* ── LAYOUT ── */
+  .page { max-width: 900px; margin: 0 auto; padding: 0 40px 60px; }
+
+  /* ── SECTION HEADINGS ── */
+  .section-header {
+    margin: 44px 0 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .section-header h2 {
+    font-family: var(--sans);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gray);
+  }
+  .section-num {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--gray-mid);
+    text-transform: uppercase;
+  }
+
+  /* ── CALLOUT BOXES ── */
+  .callout {
+    padding: 14px 18px;
+    border-radius: 6px;
+    border-left: 4px solid;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+  .callout-red    { background: var(--red-lt);   border-color: var(--red);   }
+  .callout-amber  { background: var(--amber-lt);  border-color: var(--amber); }
+  .callout-blue   { background: var(--blue-lt);   border-color: var(--blue);  }
+  .callout-green  { background: var(--green-lt);  border-color: var(--green); }
+  .callout strong { display: block; margin-bottom: 4px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
+  .callout-red strong    { color: var(--red); }
+  .callout-amber strong  { color: var(--amber); }
+  .callout-blue strong   { color: var(--blue); }
+  .callout-green strong  { color: var(--green); }
+
+  /* ── PROSE ── */
+  p { margin-bottom: 12px; font-size: 14px; color: var(--ink); }
+  p:last-child { margin-bottom: 0; }
+
+  /* ── ATTACK PATH SVG WRAPPER ── */
+  .diagram-wrap {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 20px 0;
+  }
+  .diagram-title {
+    padding: 10px 16px;
+    background: var(--gray-lt);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .diagram-body { padding: 8px; }
+
+  /* ── PHASE CARDS ── */
+  .phase-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+    background: #fff;
+    transition: background 0.15s;
+  }
+  .phase-header:hover { background: var(--gray-lt); }
+  .phase-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-red    { background: var(--red-lt);   color: var(--red);   border: 1px solid #F1948A; }
+  .badge-amber  { background: var(--amber-lt); color: var(--amber); border: 1px solid #F8C471; }
+  .badge-blue   { background: var(--blue-lt);  color: var(--blue);  border: 1px solid #7FB3D3; }
+  .badge-green  { background: var(--green-lt); color: var(--green); border: 1px solid #82E0AA; }
+
+  .phase-title { font-size: 15px; font-weight: 600; color: var(--gray); flex: 1; }
+  .phase-time  { font-size: 12px; color: var(--gray-mid); white-space: nowrap; }
+  .phase-chevron { font-size: 11px; color: var(--gray-mid); transition: transform 0.2s; }
+  .phase-chevron.open { transform: rotate(180deg); }
+
+  .phase-body { display: none; border-top: 1px solid var(--border); }
+  .phase-body.open { display: block; }
+  .phase-body-inner { padding: 4px 0 8px; }
+
+  /* ── STEPS ── */
+  .step {
+    display: flex;
+    gap: 0;
+    padding: 0;
+  }
+  .step-left {
+    width: 48px;
+    min-width: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 16px;
+  }
+  .step-dot {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .step-line {
+    width: 1px;
+    flex: 1;
+    background: var(--border);
+    margin-top: 4px;
+  }
+  .step:last-child .step-line { display: none; }
+
+  .step-right {
+    flex: 1;
+    padding: 14px 18px 14px 8px;
+    border-bottom: 1px solid var(--gray-lt);
+  }
+  .step:last-child .step-right { border-bottom: none; }
+
+  .step-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray);
+    margin-bottom: 4px;
+  }
+  .step-desc { font-size: 13px; color: var(--muted); line-height: 1.55; margin-bottom: 8px; }
+  .step-desc:last-child { margin-bottom: 0; }
+
+  /* ── CODE BLOCKS ── */
+  pre {
+    background: #1C2833;
+    color: #A9CCE3;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.6;
+    padding: 12px 16px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 8px 0;
+    white-space: pre;
+  }
+  pre .comment { color: #5D6D7E; }
+  pre .cmd     { color: #82E0AA; }
+  pre .flag    { color: #F8C471; }
+  pre .val     { color: #F1948A; }
+  code {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    background: #EBF5FB;
+    color: #1A5276;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* ── IOC TABLE ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 12px 0;
+  }
+  thead tr { background: var(--gray); color: #fff; }
+  thead th { padding: 9px 14px; text-align: left; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; }
+  tbody tr:nth-child(even) { background: var(--gray-lt); }
+  tbody tr:hover { background: var(--blue-lt); }
+  tbody td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .mono-cell { font-family: var(--mono); font-size: 11.5px; color: var(--red); }
+
+  /* ── DECISION MATRIX ── */
+  .matrix { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+  .matrix-card {
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+  }
+  .matrix-card h4 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .matrix-card ul { list-style: none; padding: 0; }
+  .matrix-card ul li { font-size: 12.5px; color: var(--muted); padding: 3px 0 3px 14px; position: relative; }
+  .matrix-card ul li::before { content: '—'; position: absolute; left: 0; color: var(--border); }
+  .matrix-card.red   h4 { color: var(--red); }
+  .matrix-card.amber h4 { color: var(--amber); }
+  .matrix-card.blue  h4 { color: var(--blue); }
+  .matrix-card.green h4 { color: var(--green); }
+
+  /* ── ATTACK TAXONOMY ── */
+  .taxonomy-row {
+    display: flex; align-items: stretch; gap: 0;
+    border: 1px solid var(--border); border-radius: 6px;
+    overflow: hidden; margin-bottom: 8px; background: #fff;
+  }
+  .tax-type {
+    width: 160px; min-width: 160px;
+    padding: 12px 14px;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center;
+    background: var(--gray-lt);
+    border-right: 1px solid var(--border);
+    color: var(--gray);
+  }
+  .tax-body { padding: 12px 16px; font-size: 13px; color: var(--muted); flex: 1; }
+  .tax-body strong { color: var(--ink); }
+  .tax-examples { font-size: 11.5px; color: var(--gray-mid); margin-top: 4px; font-family: var(--mono); }
+
+  /* ── FOOTER ── */
+  .doc-footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--gray-mid);
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .phase-body { display: block !important; }
+    .phase-chevron { display: none; }
+    pre { background: #f4f4f4 !important; color: #333 !important; border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     COVER
+══════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-label">Incident Response Playbook · Security Operations</div>
+  <h1>GCP <span>Supply Chain</span> Attack<br>Incident Response</h1>
+  <p class="cover-sub">
+    A generalized framework for detecting, containing, and recovering from
+    open-source package compromise affecting Google Cloud Platform environments —
+    applicable to any package ecosystem (npm, PyPI, Maven, RubyGems) and any
+    attack vector.
+  </p>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><strong>Scope</strong>GCP · CI/CD · Kubernetes · Artifactory</div>
+    <div class="cover-meta-item"><strong>Severity</strong>P0 — Critical</div>
+    <div class="cover-meta-item"><strong>Response Window</strong>0–72 hours + hardening</div>
+    <div class="cover-meta-item"><strong>Reference Incidents</strong>TanStack (2026), axios (hypothetical), tj-actions (2025)</div>
+  </div>
+</div>
+
+<div class="page">
+
+<!-- ══════════════════════════════════════════════
+     SECTION 1: WHAT IS A SUPPLY CHAIN ATTACK
+══════════════════════════════════════════════ -->
+<div class="section-header">
+  <span class="section-num">Section 1</span>
+  <h2>Understanding the Attack Class</h2>
+</div>
+
+<p>
+  A <strong>software supply chain attack</strong> targets the tools, libraries, and infrastructure
+  that build your software — rather than your software itself. The attacker's goal is to inject
+  malicious code into a trusted package so that it executes automatically, on trusted infrastructure,
+  with trusted credentials — without ever touching your production systems directly.
+</p>
+<p>
+  Think of it like a restaurant supplier adulterating ingredients before delivery. The kitchen staff
+  are not negligent — they trust their supplier. But every dish served that evening carries the
+  contaminant. In GCP terms: the malicious package runs inside Cloud Build, on a worker that has
+  IAM permissions. It doesn't need to break any locks — it's already inside.
+</p>
+
+<div class="callout callout-red">
+  <strong>Why GCP environments are high-value targets</strong>
+  Build workers run with service account permissions. Those service accounts frequently have access
+  to Artifact Registry, Secret Manager, GCS buckets, and Workload Identity tokens. A single
+  successful package compromise during <code>npm install</code> or <code>pip install</code> can
+  yield cloud credentials without any credential theft in the traditional sense.
+</div>
+
+<!-- Attack Taxonomy -->
+<h3 style="font-size:15px; font-weight:600; margin:24px 0 12px; color:var(--gray)">Supply Chain Attack Taxonomy</h3>
+
+<div class="taxonomy-row">
+  <div class="tax-type">Dependency confusion</div>
+  <div class="tax-body">
+    <strong>Attacker publishes a public package with the same name as your private internal package.</strong>
+    Package managers resolve public over private by default.
+    <div class="tax-examples">Example: your internal @company/utils → attacker publishes @company/utils to npm public registry</div>
+  </div>
+</div>
+<div class="taxonomy-row">
+  <div class="tax-type">Typosquatting</div>
+  <div class="tax-body">
+    <strong>Attacker registers a package name visually similar to a popular one.</strong>
+    Relies on developer typos or copy-paste errors.
+    <div class="tax-examples">Example: axios → axois, lodash → 1odash, requests → request-2</div>
+  </div>
+</div>
+<div class="taxonomy-row">
+  <div class="tax-type">Maintainer compromise</div>
+  <div class="tax-body">
+    <strong>Attacker gains control of a legitimate maintainer's account</strong> and publishes
+    a malicious version of a genuine, trusted package. Hardest to detect — valid signatures, real history.
+    <div class="tax-examples">Example: TanStack (2026) — OIDC token stolen via GitHub Actions cache poisoning</div>
+  </div>
+</div>
+<div class="taxonomy-row">
+  <div class="tax-type">CI/CD pipeline hijack</div>
+  <div class="tax-body">
+    <strong>Attacker exploits misconfigured GitHub Actions, CircleCI, or Cloud Build</strong> to
+    execute code in the context of a trusted pipeline — then uses that context to publish or exfiltrate.
+    <div class="tax-examples">Example: tj-actions/changed-files (2025), Codecov bash uploader (2021)</div>
+  </div>
+</div>
+<div class="taxonomy-row">
+  <div class="tax-type">Malicious postinstall</div>
+  <div class="tax-body">
+    <strong>A package includes a <code>postinstall</code> lifecycle script</strong> that executes
+    immediately during <code>npm install</code> or equivalent — before any code review can occur.
+    <div class="tax-examples">Example: Any npm package with scripts.postinstall in package.json</div>
+  </div>
+</div>
+<div class="taxonomy-row">
+  <div class="tax-type">Self-propagating worm</div>
+  <div class="tax-body">
+    <strong>Payload enumerates other packages the victim maintains</strong> and republishes them
+    with the same injection — multiplying blast radius automatically.
+    <div class="tax-examples">Example: Mini Shai-Hulud (2025–2026) — 400+ packages compromised from initial foothold</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 2: ATTACK PATH THROUGH GCP
+══════════════════════════════════════════════ -->
+<div class="section-header">
+  <span class="section-num">Section 2</span>
+  <h2>How the Attack Flows Through Your GCP Stack</h2>
+</div>
+
+<p>
+  Regardless of attack type, the anatomy is consistent: a compromised package enters your
+  Artifactory proxy, a CI/CD build installs it, lifecycle hooks fire on the build worker,
+  credentials are stolen from memory or environment variables, and either exfiltration occurs
+  immediately or the malicious code is baked into a container image for later execution.
+</p>
+
+<div class="diagram-wrap">
+  <div class="diagram-title">Generic GCP supply chain attack path</div>
+  <div class="diagram-body">
+    <svg width="100%" viewBox="0 0 820 560" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',sans-serif;">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#C0392B" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+        <marker id="arr-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#95A5A6" stroke-width="1.5" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <!-- Internet zone label -->
+      <text x="30" y="28" font-size="10" fill="#95A5A6" font-weight="600" letter-spacing="2">INTERNET</text>
+      <line x1="30" y1="33" x2="790" y2="33" stroke="#E5E7E9" stroke-width="0.5" stroke-dasharray="4 3"/>
+
+      <!-- Attacker -->
+      <rect x="30" y="44" width="160" height="52" rx="6" fill="#FDECEA" stroke="#E74C3C" stroke-width="1"/>
+      <text x="110" y="66" text-anchor="middle" font-size="12" font-weight="700" fill="#C0392B">Attacker</text>
+      <text x="110" y="82" text-anchor="middle" font-size="10" fill="#C0392B">Publishes malicious version</text>
+
+      <!-- Package Registry -->
+      <rect x="270" y="44" width="160" height="52" rx="6" fill="#FEF9E7" stroke="#F39C12" stroke-width="1"/>
+      <text x="350" y="66" text-anchor="middle" font-size="12" font-weight="700" fill="#D68910">Package Registry</text>
+      <text x="350" y="82" text-anchor="middle" font-size="10" fill="#D68910">npm · PyPI · Maven · RubyGems</text>
+
+      <!-- Arrow attacker → registry -->
+      <line x1="192" y1="70" x2="268" y2="70" stroke="#C0392B" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="230" y="64" text-anchor="middle" font-size="10" fill="#C0392B">inject</text>
+
+      <!-- GCP boundary dashed box -->
+      <rect x="30" y="130" width="760" height="400" rx="10" fill="#EBF5FB" stroke="#2980B9" stroke-width="1" stroke-dasharray="6 3"/>
+      <text x="50" y="150" font-size="10" fill="#2980B9" font-weight="600" letter-spacing="1.5">GCP TRUST BOUNDARY</text>
+
+      <!-- Artifactory -->
+      <rect x="60" y="165" width="170" height="66" rx="6" fill="#FDECEA" stroke="#E74C3C" stroke-width="1"/>
+      <text x="145" y="188" text-anchor="middle" font-size="12" font-weight="700" fill="#C0392B">Artifactory</text>
+      <text x="145" y="203" text-anchor="middle" font-size="10" fill="#C0392B">Proxies &amp; caches pkg</text>
+      <text x="145" y="217" text-anchor="middle" font-size="10" fill="#E74C3C">⚠ no behavior scan</text>
+
+      <!-- Arrow registry → artifactory -->
+      <path d="M350 98 Q350 120 145 163" fill="none" stroke="#C0392B" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="280" y="118" text-anchor="middle" font-size="10" fill="#C0392B">cached</text>
+
+      <!-- Cloud Build zone -->
+      <rect x="55" y="258" width="720" height="130" rx="8" fill="#FDECEA" stroke="#E74C3C" stroke-width="0.5" stroke-dasharray="4 2"/>
+      <text x="75" y="277" font-size="10" fill="#C0392B" font-weight="600" letter-spacing="1">CI/CD PIPELINE  (Cloud Build / GitHub Actions)</text>
+
+      <!-- Build worker -->
+      <rect x="75" y="287" width="175" height="82" rx="6" fill="#fff" stroke="#E74C3C" stroke-width="1"/>
+      <text x="162" y="309" text-anchor="middle" font-size="12" font-weight="700" fill="#C0392B">Build worker</text>
+      <text x="162" y="325" text-anchor="middle" font-size="10" fill="#C0392B">npm install / pip install</text>
+      <text x="162" y="341" text-anchor="middle" font-size="10" fill="#C0392B">postinstall hook executes</text>
+      <text x="162" y="357" text-anchor="middle" font-size="10" fill="#C0392B">payload runs in memory</text>
+
+      <!-- WIF token -->
+      <rect x="300" y="287" width="175" height="56" rx="6" fill="#FDECEA" stroke="#C0392B" stroke-width="1.5"/>
+      <text x="387" y="309" text-anchor="middle" font-size="12" font-weight="700" fill="#C0392B">Workload Identity</text>
+      <text x="387" y="325" text-anchor="middle" font-size="10" fill="#C0392B">token stolen from memory</text>
+      <text x="387" y="341" text-anchor="middle" font-size="10" fill="#C0392B">SA keys / env vars harvested</text>
+
+      <!-- Env secrets box -->
+      <rect x="525" y="287" width="175" height="56" rx="6" fill="#FDECEA" stroke="#C0392B" stroke-width="1.5"/>
+      <text x="612" y="309" text-anchor="middle" font-size="12" font-weight="700" fill="#C0392B">Env secrets</text>
+      <text x="612" y="325" text-anchor="middle" font-size="10" fill="#C0392B">AWS keys · SSH · .npmrc</text>
+      <text x="612" y="341" text-anchor="middle" font-size="10" fill="#C0392B">GitHub tokens · Vault creds</text>
+
+      <!-- arrows in pipeline -->
+      <line x1="252" y1="328" x2="298" y2="315" stroke="#C0392B" stroke-width="1.5" marker-end="url(#arr)"/>
+      <line x1="477" y1="315" x2="523" y2="315" stroke="#C0392B" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Exfil arrow up + out -->
+      <path d="M700 315 Q780 315 780 100 Q780 70 760 70" fill="none" stroke="#C0392B" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+      <text x="790" y="200" font-size="10" fill="#C0392B" text-anchor="middle">exfil</text>
+      <text x="790" y="213" font-size="10" fill="#C0392B" text-anchor="middle">C2</text>
+
+      <!-- Artifactory → Build worker -->
+      <line x1="145" y1="233" x2="145" y2="285" stroke="#C0392B" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="155" y="262" font-size="10" fill="#C0392B">install</text>
+
+      <!-- Container image -->
+      <rect x="60" y="418" width="280" height="66" rx="6" fill="#FDECEA" stroke="#E74C3C" stroke-width="1"/>
+      <text x="200" y="440" text-anchor="middle" font-size="12" font-weight="700" fill="#C0392B">Container image</text>
+      <text x="200" y="456" text-anchor="middle" font-size="10" fill="#C0392B">Artifact Registry — malicious layer baked in</text>
+      <text x="200" y="472" text-anchor="middle" font-size="10" fill="#C0392B">passes SLSA provenance · looks legitimate</text>
+
+      <!-- GKE pods -->
+      <rect x="380" y="418" width="160" height="66" rx="6" fill="#FDECEA" stroke="#E74C3C" stroke-width="1"/>
+      <text x="460" y="440" text-anchor="middle" font-size="12" font-weight="700" fill="#C0392B">GKE pods</text>
+      <text x="460" y="456" text-anchor="middle" font-size="10" fill="#C0392B">Pull infected image</text>
+      <text x="460" y="472" text-anchor="middle" font-size="10" fill="#C0392B">Query metadata server</text>
+
+      <!-- GCP APIs -->
+      <rect x="580" y="418" width="175" height="66" rx="6" fill="#EBF5FB" stroke="#2980B9" stroke-width="1"/>
+      <text x="667" y="440" text-anchor="middle" font-size="12" font-weight="700" fill="#1A5276">GCP APIs</text>
+      <text x="667" y="456" text-anchor="middle" font-size="10" fill="#1A5276">GCS · BigQuery · GKE</text>
+      <text x="667" y="472" text-anchor="middle" font-size="10" fill="#1A5276">Secret Manager · KMS</text>
+
+      <!-- build → image -->
+      <line x1="162" y1="390" x2="162" y2="416" stroke="#C0392B" stroke-width="1.5" marker-end="url(#arr)"/>
+      <!-- image → pods -->
+      <line x1="342" y1="451" x2="378" y2="451" stroke="#C0392B" stroke-width="1.5" marker-end="url(#arr)"/>
+      <!-- pods → APIs -->
+      <line x1="542" y1="451" x2="578" y2="451" stroke="#C0392B" stroke-width="1.5" marker-end="url(#arr)"/>
+
+      <!-- Detection layer label -->
+      <text x="410" y="510" text-anchor="middle" font-size="10" fill="#95A5A6" font-style="italic">Cloud Audit Logs · VPC Flow Logs · Security Command Center · Cloud IDS</text>
+      <line x1="60" y1="500" x2="760" y2="500" stroke="#D5D8DC" stroke-width="0.5" stroke-dasharray="3 3"/>
+    </svg>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 3: TRIAGE DECISION MATRIX
+══════════════════════════════════════════════ -->
+<div class="section-header">
+  <span class="section-num">Section 3</span>
+  <h2>Initial Triage — What Exposure Do You Have?</h2>
+</div>
+
+<p>
+  Before activating the full playbook, determine your exposure tier. This dictates
+  which phases are urgent vs. precautionary.
+</p>
+
+<div class="matrix">
+  <div class="matrix-card red">
+    <h4>🔴 Tier 1 — Active compromise confirmed</h4>
+    <ul>
+      <li>Malicious package version in Artifactory cache</li>
+      <li>Cloud Build ran npm/pip install during attack window</li>
+      <li>C2 domain observed in VPC Flow Logs or DNS</li>
+      <li>Unexpected API calls from build service account</li>
+    </ul>
+  </div>
+  <div class="matrix-card amber">
+    <h4>🟡 Tier 2 — Possible exposure, investigating</h4>
+    <ul>
+      <li>Affected package in lockfile but no confirmed build</li>
+      <li>Build ran during window, logs incomplete</li>
+      <li>No C2 traffic observed but image was pushed</li>
+      <li>Artifactory logs unavailable / retention expired</li>
+    </ul>
+  </div>
+  <div class="matrix-card blue">
+    <h4>🔵 Tier 3 — Indirect / transitive exposure</h4>
+    <ul>
+      <li>Affected package is a transitive dependency only</li>
+      <li>Package in lockfile but build uses --ignore-scripts</li>
+      <li>Artifactory confirmed clean cache at time of build</li>
+    </ul>
+  </div>
+  <div class="matrix-card green">
+    <h4>🟢 Tier 4 — Not affected</h4>
+    <ul>
+      <li>Package family confirmed clean (see vendor advisory)</li>
+      <li>No builds ran during attack window</li>
+      <li>Build pipeline does not use affected ecosystem</li>
+      <li>72-hour cooldown policy in Artifactory was active</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 4: THE IR PHASES
+══════════════════════════════════════════════ -->
+<div class="section-header">
+  <span class="section-num">Section 4</span>
+  <h2>Response Phases</h2>
+</div>
+
+<div class="callout callout-amber">
+  <strong>How to use this section</strong>
+  Work top to bottom. Each phase unblocks the next. Phases 1–2 are time-critical.
+  Phases 3–4 are investigative. Phase 5 is structural hardening — do not skip it.
+  Commands shown target GCP + npm; adapt ecosystem-specific syntax for PyPI, Maven, etc.
+</div>
+
+<!-- ── PHASE 1 ── -->
+<div class="phase-card">
+  <div class="phase-header" onclick="toggle(this)">
+    <span class="phase-badge badge-red">Phase 1</span>
+    <span class="phase-title">Detect &amp; confirm — is the malicious package in your environment?</span>
+    <span class="phase-time">⏱ First 30 min</span>
+    <span class="phase-chevron">▼</span>
+  </div>
+  <div class="phase-body">
+    <div class="phase-body-inner">
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">1</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Identify affected package versions from vendor advisory</div>
+          <div class="step-desc">
+            Check the package maintainer's advisory, GitHub Security Advisories (GHSA), Snyk, or Socket
+            for the specific version ranges compromised. Not all versions of a package are affected.
+            Document the exact version strings.
+          </div>
+          <div class="step-desc">For TanStack (example): affected = 42 packages, versions published 2026-05-11 19:20–19:26 UTC.<br>
+          For any incident: pull the GHSA identifier and pinned version list first.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">2</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Check Artifactory for cached malicious tarballs</div>
+          <div class="step-desc">Search for the affected package names and version strings in your Artifactory instance.
+          A cached copy means every subsequent build that calls install will pull the malicious version.</div>
+          <pre>Artifactory UI → Artifacts → Search
+  Package name: &lt;affected-package&gt;
+  Version: &lt;affected-version-range&gt;
+  Repository: your-npm-virtual-repo
+
+<span class="comment"># Or via Artifactory REST API:</span>
+<span class="cmd">curl</span> <span class="flag">-u</span> <span class="val">user:token</span> \
+  "https://&lt;artifactory&gt;/artifactory/api/search/gavc?g=&lt;pkg&gt;&v=&lt;ver&gt;"</pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">3</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Search Cloud Build logs for builds that used the affected package</div>
+          <div class="step-desc">Any build that ran <code>npm install</code> / <code>pip install</code> and resolved the
+          affected package version is potentially compromised. The postinstall hook fires on the build worker.</div>
+          <pre><span class="cmd">gcloud</span> logging read \
+  'resource.type="build" AND textPayload:"&lt;package-name&gt;"' \
+  <span class="flag">--project</span>=<span class="val">YOUR_PROJECT</span> \
+  <span class="flag">--freshness</span>=<span class="val">7d</span> \
+  <span class="flag">--format</span>=<span class="val">json</span> | jq '.[].jsonPayload'</pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">4</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Check for C2 connections in Cloud Audit Logs and VPC Flow Logs</div>
+          <div class="step-desc">Known C2 indicators from vendor advisories and threat intelligence feeds.
+          For the TanStack incident: <code>filev2.getsession.org</code>, <code>git-tanstack.com</code>.
+          For any incident: block and search for all IOC domains from the advisory.</div>
+          <pre><span class="cmd">gcloud</span> logging read \
+  '(textPayload:"&lt;c2-domain-1&gt;" OR textPayload:"&lt;c2-domain-2&gt;")' \
+  <span class="flag">--project</span>=<span class="val">YOUR_PROJECT</span> \
+  <span class="flag">--freshness</span>=<span class="val">7d</span>
+
+<span class="comment"># Also check VPC Flow Logs if enabled:</span>
+<span class="cmd">gcloud</span> logging read \
+  'resource.type="gce_subnetwork" AND
+   jsonPayload.connection.dest_port="443" AND
+   jsonPayload.reporter="SRC"' \
+  <span class="flag">--freshness</span>=<span class="val">3d</span></pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">5</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">List container images built during the exposure window</div>
+          <div class="step-desc">Any image pushed after an infected build is potentially compromised — the malicious
+          code is baked into a layer and will execute when the container starts.</div>
+          <pre><span class="cmd">gcloud</span> artifacts docker images list \
+  <span class="val">REGION</span>-docker.pkg.dev/<span class="val">PROJECT</span>/<span class="val">REPO</span> \
+  <span class="flag">--filter</span>="createTime>&lt;WINDOW-START&gt;"</pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── PHASE 2 ── -->
+<div class="phase-card">
+  <div class="phase-header" onclick="toggle(this)">
+    <span class="phase-badge badge-red">Phase 2</span>
+    <span class="phase-title">Contain — stop further spread immediately</span>
+    <span class="phase-time">⏱ First 1–2 hours</span>
+    <span class="phase-chevron">▼</span>
+  </div>
+  <div class="phase-body">
+    <div class="phase-body-inner">
+
+      <div class="callout callout-red" style="margin:12px 18px 4px;">
+        <strong>Do this first — before credential rotation</strong>
+        Until the malicious package is blocked in Artifactory, every new build is a potential
+        reinfection — even after you rotate credentials. Block the tarball before anything else.
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">1</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Block the malicious package versions in Artifactory</div>
+          <div class="step-desc">Add affected versions to your blocked artifact list. This prevents any
+          future build from pulling them, regardless of what version is in their lockfile.</div>
+          <pre>Artifactory → Security → Blocked Artifacts → Add Rule
+  Repository: your-npm-virtual-repo
+  Package: &lt;affected-package&gt;
+  Version: &lt;exact affected versions&gt;
+
+<span class="comment"># Via JFrog CLI:</span>
+<span class="cmd">jfrog</span> rt dl <span class="flag">--dry-run</span> "&lt;repo&gt;/&lt;pkg&gt;/-/&lt;pkg&gt;-&lt;ver&gt;.tgz"
+<span class="cmd">jfrog</span> rt delete "&lt;repo&gt;/&lt;pkg&gt;/-/&lt;pkg&gt;-&lt;ver&gt;.tgz"</pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">2</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Block C2 domains at Cloud DNS and VPC firewall egress</div>
+          <div class="step-desc">Even if compromise already occurred, blocking C2 cuts ongoing exfiltration
+          and command channels. Use both DNS response policy (prevents resolution) and firewall rules
+          (blocks established connections by IP range if domain resolves via DoH).</div>
+          <pre><span class="comment"># VPC egress block for build worker subnet:</span>
+<span class="cmd">gcloud</span> compute firewall-rules create block-supply-chain-c2 \
+  <span class="flag">--direction</span>=EGRESS <span class="flag">--priority</span>=100 \
+  <span class="flag">--action</span>=DENY <span class="flag">--rules</span>=tcp:443 \
+  <span class="flag">--target-tags</span>=build-worker \
+  <span class="flag">--destination-ranges</span>=&lt;c2-ip-ranges&gt;
+
+<span class="comment"># Cloud DNS response policy (blocks resolution):</span>
+<span class="cmd">gcloud</span> dns response-policies rules create block-c2-domain \
+  <span class="flag">--response-policy</span>=my-response-policy \
+  <span class="flag">--dns-name</span>="&lt;c2-domain&gt;." \
+  <span class="flag">--local-data</span>=name="&lt;c2-domain&gt;.",type=A,rrdata=0.0.0.0</pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">3</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Pause CI/CD pipelines that use the affected ecosystem</div>
+          <div class="step-desc">Disable Cloud Build triggers for any pipeline that runs npm install, pip install,
+          or equivalent until the dependency tree is verified clean. This prevents new infections while
+          investigation is underway.</div>
+          <pre><span class="comment"># List all triggers:</span>
+<span class="cmd">gcloud</span> builds triggers list <span class="flag">--project</span>=<span class="val">YOUR_PROJECT</span>
+
+<span class="comment"># Disable specific trigger:</span>
+<span class="cmd">gcloud</span> builds triggers run <span class="val">TRIGGER_ID</span> <span class="flag">--no-run</span>
+
+<span class="comment"># Or via Cloud Console: Cloud Build → Triggers → disable</span></pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">4</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Quarantine suspect container images in Artifact Registry</div>
+          <div class="step-desc">Tag images built during the exposure window as quarantined.
+          Update GKE deployment manifests to pin to the last known-good image digest.
+          Do not delete yet — preserve for forensics.</div>
+          <pre><span class="cmd">gcloud</span> artifacts docker images add-tag \
+  <span class="val">REGION</span>-docker.pkg.dev/<span class="val">PROJECT</span>/<span class="val">REPO</span>/<span class="val">IMAGE</span>:<span class="val">TAG</span> \
+  <span class="val">REGION</span>-docker.pkg.dev/<span class="val">PROJECT</span>/<span class="val">REPO</span>/<span class="val">IMAGE</span>:QUARANTINED-&lt;date&gt;
+
+<span class="comment"># Pin GKE deployments to last clean digest:</span>
+<span class="cmd">kubectl</span> set image deployment/&lt;name&gt; \
+  &lt;container&gt;=&lt;image&gt;@sha256:&lt;last-clean-digest&gt; \
+  <span class="flag">-n</span> &lt;namespace&gt;</pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── PHASE 3 ── -->
+<div class="phase-card">
+  <div class="phase-header" onclick="toggle(this)">
+    <span class="phase-badge badge-amber">Phase 3</span>
+    <span class="phase-title">Credential rotation — assume everything reachable was stolen</span>
+    <span class="phase-time">⏱ Within 4 hours</span>
+    <span class="phase-chevron">▼</span>
+  </div>
+  <div class="phase-body">
+    <div class="phase-body-inner">
+
+      <div class="callout callout-amber" style="margin:12px 18px 4px;">
+        <strong>Rotate broadly — don't try to scope narrowly</strong>
+        Supply chain payloads are designed to harvest everything from the build worker environment.
+        Trying to determine exactly what was stolen before rotating credentials wastes time and
+        leaves you exposed. Rotate all credentials reachable from the build worker, then investigate.
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">1</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Rotate Cloud Build service account credentials</div>
+          <pre><span class="comment"># List keys for build SA:</span>
+<span class="cmd">gcloud</span> iam service-accounts keys list \
+  <span class="flag">--iam-account</span>=<span class="val">BUILD-SA@PROJECT.iam.gserviceaccount.com</span>
+
+<span class="comment"># Delete all user-managed keys:</span>
+<span class="cmd">gcloud</span> iam service-accounts keys delete <span class="val">KEY_ID</span> \
+  <span class="flag">--iam-account</span>=<span class="val">BUILD-SA@PROJECT.iam.gserviceaccount.com</span>
+
+<span class="comment"># Prefer Workload Identity Federation — no static keys to steal</span></pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">2</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Rotate all secrets reachable from the build worker</div>
+          <div class="step-desc">The payload specifically targets: GitHub tokens, SSH keys, Kubernetes SA tokens,
+          <code>.npmrc</code> / <code>.pypirc</code> credentials, AWS access keys, and GCP service account keys
+          stored as environment variables.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">3</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Rotate Secret Manager secrets accessible by the build SA</div>
+          <pre><span class="comment"># Find secrets with IAM binding for build SA:</span>
+<span class="cmd">gcloud</span> secrets list <span class="flag">--project</span>=<span class="val">PROJECT</span>
+
+<span class="comment"># For each sensitive secret — add new version, disable old:</span>
+<span class="cmd">gcloud</span> secrets versions add <span class="val">SECRET_NAME</span> \
+  <span class="flag">--data-file</span>=new-value.txt
+
+<span class="cmd">gcloud</span> secrets versions disable <span class="val">PREV_VERSION</span> \
+  <span class="flag">--secret</span>=<span class="val">SECRET_NAME</span></pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">4</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Audit Cloud KMS — rotate keys reachable from build workers</div>
+          <div class="step-desc">If the build SA had access to KMS key rings, treat all data encrypted with
+          those keys as potentially accessible to the attacker. Rotate keys and re-encrypt sensitive data.</div>
+          <pre><span class="cmd">gcloud</span> kms keys list \
+  <span class="flag">--location</span>=global \
+  <span class="flag">--keyring</span>=<span class="val">YOUR_KEYRING</span>
+
+<span class="comment"># Check IAM bindings for each key reachable from build SA</span>
+<span class="cmd">gcloud</span> kms keys get-iam-policy <span class="val">KEY_NAME</span> \
+  <span class="flag">--location</span>=global <span class="flag">--keyring</span>=<span class="val">KEYRING</span></pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── PHASE 4 ── -->
+<div class="phase-card">
+  <div class="phase-header" onclick="toggle(this)">
+    <span class="phase-badge badge-blue">Phase 4</span>
+    <span class="phase-title">Forensics — establish scope, timeline, and evidence</span>
+    <span class="phase-time">⏱ Within 24 hours</span>
+    <span class="phase-chevron">▼</span>
+  </div>
+  <div class="phase-body">
+    <div class="phase-body-inner">
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">1</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Preserve all logs immediately — before retention windows expire</div>
+          <pre><span class="cmd">gcloud</span> storage buckets update gs://<span class="val">YOUR-IR-BUCKET</span> \
+  <span class="flag">--retention-period</span>=7776000 <span class="comment"># 90 days</span>
+
+<span class="comment"># Export Cloud Audit Logs to GCS for analysis:</span>
+<span class="cmd">gcloud</span> logging sinks create ir-evidence-sink \
+  storage.googleapis.com/<span class="val">IR-BUCKET</span> \
+  <span class="flag">--log-filter</span>='timestamp>="&lt;WINDOW-START&gt;"'</pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">2</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Audit all data access by the build service account post-exposure</div>
+          <pre><span class="cmd">gcloud</span> logging read \
+  'protoPayload.authenticationInfo.principalEmail="build-sa@PROJECT.iam.gserviceaccount.com"
+   AND timestamp>="&lt;EXPOSURE-WINDOW-START&gt;"' \
+  <span class="flag">--limit</span>=1000 <span class="flag">--format</span>=json | \
+  jq '.[].protoPayload | {method:.methodName, resource:.resourceName}'</pre>
+          <div class="step-desc" style="margin-top:8px">Look for: unusual GCS object reads, Secret Manager access,
+          BigQuery job creation, new IAM bindings, API calls at unusual hours.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">3</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Inspect container image layers for the injected payload</div>
+          <pre><span class="cmd">docker</span> pull <span class="val">SUSPECT_IMAGE</span>
+
+<span class="comment"># Search for payload file by name or size:</span>
+<span class="cmd">docker</span> run <span class="flag">--entrypoint</span> sh <span class="val">SUSPECT_IMAGE</span> -c \
+  "find /app/node_modules -name '&lt;payload-filename&gt;' -size +1M 2>/dev/null"
+
+<span class="comment"># Inspect each layer for unexpected additions:</span>
+<span class="cmd">docker</span> history <span class="flag">--no-trunc</span> <span class="val">SUSPECT_IMAGE</span>
+<span class="cmd">docker</span> save <span class="val">SUSPECT_IMAGE</span> | tar -xv <span class="comment"># extract all layers</span></pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">4</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Check GKE audit logs for anomalous pod behavior</div>
+          <pre><span class="cmd">gcloud</span> logging read \
+  'resource.type="k8s_cluster"
+   AND protoPayload.methodName=("io.k8s.core.v1.pods.exec"
+   OR "io.k8s.core.v1.pods.portforward"
+   OR "io.k8s.core.v1.secrets.get")
+   AND timestamp>="&lt;WINDOW-START&gt;"'</pre>
+          <div class="step-desc" style="margin-top:8px">
+            Note: GKE metadata server queries may not appear in standard audit logs.
+            Enable Workload Identity audit logging separately and check node-level syslog
+            if GKE node logging is enabled.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">5</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Check whether your own published packages were re-infected</div>
+          <div class="step-desc">Self-propagating worms enumerate packages the victim maintains via the registry API
+          and republish them with the injection. Check your published packages for unexpected version bumps
+          during the attack window.</div>
+          <pre><span class="comment"># Check npm for unexpected versions:</span>
+<span class="cmd">npm</span> view @your-org/your-package versions --json
+
+<span class="comment"># Check Artifact Registry for unexpected image tags:</span>
+<span class="cmd">gcloud</span> artifacts docker images list \
+  <span class="val">REGION</span>-docker.pkg.dev/<span class="val">PROJECT</span>/<span class="val">REPO</span> \
+  <span class="flag">--filter</span>="createTime>&lt;WINDOW-START&gt;" \
+  <span class="flag">--format</span>="table(package,tags,createTime)"</pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── PHASE 5 ── -->
+<div class="phase-card">
+  <div class="phase-header" onclick="toggle(this)">
+    <span class="phase-badge badge-green">Phase 5</span>
+    <span class="phase-title">Structural hardening — close the gaps that made this possible</span>
+    <span class="phase-time">⏱ Within 1–2 weeks</span>
+    <span class="phase-chevron">▼</span>
+  </div>
+  <div class="phase-body">
+    <div class="phase-body-inner">
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">1</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Enable a package version cooldown policy in Artifactory ⭐ Highest impact</div>
+          <div class="step-desc">
+            Configure Artifactory to hold newly published package versions for <strong>72 hours</strong>
+            before serving them to CI/CD. This is the single control that would have prevented the
+            TanStack attack entirely — the malicious versions were deprecated within 20 minutes.
+            Cooldown is available via JFrog Artifactory's "Xray Watch" or a custom proxy rule.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">2</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Disable lifecycle scripts in CI/CD installs</div>
+          <div class="step-desc">Lifecycle hooks (<code>postinstall</code>, <code>preinstall</code>) are
+          the primary execution vector. Disabling them removes the attack surface entirely for most payloads.</div>
+          <pre><span class="comment"># npm — in cloudbuild.yaml:</span>
+- name: 'node:20'
+  entrypoint: npm
+  args: ['install', '--ignore-scripts']
+
+<span class="comment"># pip — use --no-build-isolation or audit wheels separately</span>
+<span class="comment"># Maven — disable exec plugin in CI profile</span></pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">3</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Apply least privilege to build service accounts</div>
+          <div class="step-desc">Build workers almost never need access to production GCS, BigQuery, Secret Manager,
+          or KMS. Use separate service accounts per environment (dev/staging/prod) and scope each tightly.</div>
+          <pre><span class="comment"># Minimum viable build SA roles:</span>
+roles/logging.logWriter
+roles/artifactregistry.writer      <span class="comment"># push images only</span>
+roles/storage.objectCreator        <span class="comment"># write build artifacts only</span>
+
+<span class="comment"># Remove any broad roles:</span>
+<span class="cmd">gcloud</span> projects get-iam-policy <span class="val">PROJECT</span> \
+  <span class="flag">--flatten</span>="bindings[].members" \
+  <span class="flag">--filter</span>="bindings.members:build-sa@" \
+  <span class="flag">--format</span>="table(bindings.role)"</pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">4</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Enable JFrog Xray behavioral scanning in Artifactory</div>
+          <div class="step-desc">Xray scans package contents for malicious lifecycle scripts, known CVEs,
+          and license violations before serving them to consumers. Enable it on all npm and PyPI
+          virtual repositories. This is Artifactory's biggest structural gap in this attack class.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">5</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Use Workload Identity Federation — eliminate long-lived SA keys</div>
+          <div class="step-desc">Static service account keys in environment variables are the most valuable
+          credential for attackers. Workload Identity Federation issues short-lived tokens tied to
+          the specific workflow — stolen tokens expire in minutes, not years.</div>
+          <pre><span class="comment"># Bind Cloud Build to WIF instead of SA key:</span>
+<span class="cmd">gcloud</span> iam workload-identity-pools create "cicd-pool" \
+  <span class="flag">--project</span>=<span class="val">PROJECT</span> \
+  <span class="flag">--location</span>="global"
+
+<span class="comment"># Scope token to specific repo + branch only:</span>
+<span class="cmd">gcloud</span> iam service-accounts add-iam-policy-binding \
+  BUILD-SA@PROJECT.iam.gserviceaccount.com \
+  <span class="flag">--role</span>="roles/iam.workloadIdentityUser" \
+  <span class="flag">--member</span>="principalSet://iam.googleapis.com/projects/.../attribute.repository/org/repo"</pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-left"><div class="step-dot">6</div><div class="step-line"></div></div>
+        <div class="step-right">
+          <div class="step-label">Enable GCP Security Command Center + alert on build anomalies</div>
+          <div class="step-desc">Configure alerting on: unexpected service account API calls outside business hours,
+          new IAM role bindings, outbound connections from build worker subnets to uncategorized domains,
+          and unexpected image pushes to Artifact Registry.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 5: IOC REFERENCE
+══════════════════════════════════════════════ -->
+<div class="section-header">
+  <span class="section-num">Section 5</span>
+  <h2>IOC Reference — TanStack / Mini Shai-Hulud (May 2026)</h2>
+</div>
+
+<p>Use these as a concrete example. For any future incident, replace with IOCs from the vendor advisory and relevant GHSA/CVE entry.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Indicator</th>
+      <th>Context</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>C2 domain</td><td class="mono-cell">filev2.getsession.org</td><td>Primary exfil via Session/Oxen E2E encrypted upload</td></tr>
+    <tr><td>C2 domain</td><td class="mono-cell">seed1/2/3.getsession.org</td><td>Secondary exfil nodes</td></tr>
+    <tr><td>C2 domain</td><td class="mono-cell">git-tanstack.com</td><td>Attacker-controlled infrastructure, flagged by Cloudflare</td></tr>
+    <tr><td>Payload file</td><td class="mono-cell">router_init.js (~2.3 MB)</td><td>Injected into node_modules of each affected package</td></tr>
+    <tr><td>GitHub account</td><td class="mono-cell">voicproducoes</td><td>Attacker account used to open malicious PR</td></tr>
+    <tr><td>Fork name</td><td class="mono-cell">zblgg/configuration</td><td>Renamed to evade fork-list detection</td></tr>
+    <tr><td>CVE</td><td class="mono-cell">CVE-2026-45321</td><td>Severity: Critical</td></tr>
+    <tr><td>GHSA</td><td class="mono-cell">GHSA-g7cv-rxg3-hmpx</td><td>Full affected package list in this advisory</td></tr>
+    <tr><td>npm window</td><td class="mono-cell">2026-05-11 19:20–19:26 UTC</td><td>84 versions across 42 @tanstack/* packages</td></tr>
+    <tr><td>Threat group</td><td class="mono-cell">TeamPCP</td><td>Also responsible for Trivy (Mar 2026), Bitwarden CLI (Apr 2026)</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 6: PREVENTION SUMMARY
+══════════════════════════════════════════════ -->
+<div class="section-header">
+  <span class="section-num">Section 6</span>
+  <h2>Prevention — Controls That Would Have Stopped This</h2>
+</div>
+
+<div class="diagram-wrap">
+  <div class="diagram-title">Control effectiveness vs. attack stages</div>
+  <div class="diagram-body">
+    <svg width="100%" viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg" style="font-family:'Segoe UI',sans-serif;">
+
+      <!-- Stage headers -->
+      <rect x="10"  y="10" width="148" height="36" rx="4" fill="#2C3E50"/>
+      <rect x="168" y="10" width="148" height="36" rx="4" fill="#2C3E50"/>
+      <rect x="326" y="10" width="148" height="36" rx="4" fill="#2C3E50"/>
+      <rect x="484" y="10" width="148" height="36" rx="4" fill="#2C3E50"/>
+      <rect x="642" y="10" width="158" height="36" rx="4" fill="#2C3E50"/>
+
+      <text x="84"  y="32" text-anchor="middle" font-size="11" fill="#fff" font-weight="600">Registry</text>
+      <text x="242" y="32" text-anchor="middle" font-size="11" fill="#fff" font-weight="600">Artifactory</text>
+      <text x="400" y="32" text-anchor="middle" font-size="11" fill="#fff" font-weight="600">Build worker</text>
+      <text x="558" y="32" text-anchor="middle" font-size="11" fill="#fff" font-weight="600">Container image</text>
+      <text x="721" y="32" text-anchor="middle" font-size="11" fill="#fff" font-weight="600">GKE / runtime</text>
+
+      <!-- Controls grid -->
+      <!-- Row 1: Cooldown policy -->
+      <text x="10" y="68" font-size="11" fill="#1E8449" font-weight="600">72-hr cooldown policy</text>
+      <rect x="10"  y="74" width="148" height="18" rx="3" fill="#EAFAF1" stroke="#27AE60" stroke-width="1"/>
+      <text x="84"  y="87" text-anchor="middle" font-size="10" fill="#1E8449">✓ blocks at source</text>
+      <rect x="168" y="74" width="148" height="18" rx="3" fill="#EAFAF1" stroke="#27AE60" stroke-width="1"/>
+      <text x="242" y="87" text-anchor="middle" font-size="10" fill="#1E8449">✓ holds until clean</text>
+      <rect x="326" y="74" width="306" height="18" rx="3" fill="#F4F6F7" stroke="#D5D8DC" stroke-width="0.5"/>
+      <text x="479" y="87" text-anchor="middle" font-size="10" fill="#95A5A6">not reached</text>
+      <rect x="642" y="74" width="158" height="18" rx="3" fill="#F4F6F7" stroke="#D5D8DC" stroke-width="0.5"/>
+      <text x="721" y="87" text-anchor="middle" font-size="10" fill="#95A5A6">not reached</text>
+
+      <!-- Row 2: Xray scanning -->
+      <text x="10" y="112" font-size="11" fill="#1A5276" font-weight="600">Xray behavioral scan</text>
+      <rect x="10"  y="118" width="148" height="18" rx="3" fill="#F4F6F7" stroke="#D5D8DC" stroke-width="0.5"/>
+      <text x="84"  y="131" text-anchor="middle" font-size="10" fill="#95A5A6">no control</text>
+      <rect x="168" y="118" width="148" height="18" rx="3" fill="#EBF5FB" stroke="#2980B9" stroke-width="1"/>
+      <text x="242" y="131" text-anchor="middle" font-size="10" fill="#1A5276">✓ flags on cache</text>
+      <rect x="326" y="118" width="148" height="18" rx="3" fill="#F4F6F7" stroke="#D5D8DC" stroke-width="0.5"/>
+      <text x="400" y="131" text-anchor="middle" font-size="10" fill="#95A5A6">not reached</text>
+      <rect x="484" y="118" width="316" height="18" rx="3" fill="#F4F6F7" stroke="#D5D8DC" stroke-width="0.5"/>
+      <text x="642" y="131" text-anchor="middle" font-size="10" fill="#95A5A6">not reached</text>
+
+      <!-- Row 3: --ignore-scripts -->
+      <text x="10" y="156" font-size="11" fill="#D68910" font-weight="600">--ignore-scripts in CI</text>
+      <rect x="10"  y="162" width="296" height="18" rx="3" fill="#F4F6F7" stroke="#D5D8DC" stroke-width="0.5"/>
+      <text x="159" y="175" text-anchor="middle" font-size="10" fill="#95A5A6">upstream</text>
+      <rect x="326" y="162" width="148" height="18" rx="3" fill="#FEF9E7" stroke="#F39C12" stroke-width="1"/>
+      <text x="400" y="175" text-anchor="middle" font-size="10" fill="#D68910">✓ blocks execution</text>
+      <rect x="484" y="162" width="316" height="18" rx="3" fill="#F4F6F7" stroke="#D5D8DC" stroke-width="0.5"/>
+      <text x="642" y="175" text-anchor="middle" font-size="10" fill="#95A5A6">not reached</text>
+
+      <!-- Row 4: Least privilege SA -->
+      <text x="10" y="200" font-size="11" fill="#C0392B" font-weight="600">Least-privilege build SA</text>
+      <rect x="10"  y="206" width="474" height="18" rx="3" fill="#F4F6F7" stroke="#D5D8DC" stroke-width="0.5"/>
+      <text x="242" y="219" text-anchor="middle" font-size="10" fill="#95A5A6">upstream</text>
+      <rect x="484" y="206" width="148" height="18" rx="3" fill="#FDECEA" stroke="#E74C3C" stroke-width="1"/>
+      <text x="558" y="219" text-anchor="middle" font-size="10" fill="#C0392B">⚡ limits blast radius</text>
+      <rect x="642" y="206" width="158" height="18" rx="3" fill="#FDECEA" stroke="#E74C3C" stroke-width="1"/>
+      <text x="721" y="219" text-anchor="middle" font-size="10" fill="#C0392B">⚡ limits blast radius</text>
+
+      <!-- Row 5: SCC alerting -->
+      <text x="10" y="244" font-size="11" fill="#566573" font-weight="600">SCC + anomaly alerting</text>
+      <rect x="10"  y="250" width="780" height="18" rx="3" fill="#F4F6F7" stroke="#95A5A6" stroke-width="0.5" stroke-dasharray="3 2"/>
+      <text x="400" y="263" text-anchor="middle" font-size="10" fill="#566573">🔍 detects at any stage — but does not prevent</text>
+
+      <!-- Legend -->
+      <rect x="10" y="282" width="12" height="8" rx="2" fill="#EAFAF1" stroke="#27AE60" stroke-width="1"/>
+      <text x="26" y="290" font-size="9" fill="#566573">Prevents</text>
+      <rect x="100" y="282" width="12" height="8" rx="2" fill="#FDECEA" stroke="#E74C3C" stroke-width="1"/>
+      <text x="116" y="290" font-size="9" fill="#566573">Limits damage</text>
+      <rect x="210" y="282" width="12" height="8" rx="2" fill="#F4F6F7" stroke="#D5D8DC" stroke-width="0.5" stroke-dasharray="2 1"/>
+      <text x="226" y="290" font-size="9" fill="#566573">Detects only</text>
+    </svg>
+  </div>
+</div>
+
+<!-- References -->
+<div class="section-header">
+  <span class="section-num">Section 7</span>
+  <h2>References</h2>
+</div>
+<table>
+  <thead><tr><th>Source</th><th>Link</th></tr></thead>
+  <tbody>
+    <tr><td>TanStack official postmortem</td><td class="mono-cell">tanstack.com/blog/npm-supply-chain-compromise-postmortem</td></tr>
+    <tr><td>StepSecurity — Mini Shai-Hulud analysis</td><td class="mono-cell">stepsecurity.io/blog/mini-shai-hulud-is-back</td></tr>
+    <tr><td>Wiz — campaign overview</td><td class="mono-cell">wiz.io/blog/mini-shai-hulud-strikes-again</td></tr>
+    <tr><td>Snyk advisory</td><td class="mono-cell">snyk.io/blog/tanstack-npm-packages-compromised</td></tr>
+    <tr><td>GHSA for TanStack incident</td><td class="mono-cell">github.com/advisories/GHSA-g7cv-rxg3-hmpx</td></tr>
+    <tr><td>GCP Workload Identity Federation docs</td><td class="mono-cell">cloud.google.com/iam/docs/workload-identity-federation</td></tr>
+    <tr><td>JFrog Xray documentation</td><td class="mono-cell">jfrog.com/help/r/jfrog-security-documentation/jfrog-xray</td></tr>
+  </tbody>
+</table>
+
+<div class="doc-footer">
+  <span>GCP Supply Chain Attack IR Playbook — Generalized Framework</span>
+  <span>Generated: 2026-05-14 · Adapt per incident advisory</span>
+</div>
+
+</div><!-- /page -->
+
+<script>
+function toggle(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.phase-chevron');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chevron.classList.toggle('open', !isOpen);
+}
+// Open Phase 1 by default
+document.querySelector('.phase-header').click();
+</script>
+</body>
+</html>
