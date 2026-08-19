@@ -1,0 +1,387 @@
+## Phase 1 — Build the Current-Business Inventory
+
+Do this **before matching anything against the terrain map**.
+
+### Step 1 — Define what counts as a Current Pad
+
+Treat something as a potential Current Pad when at least one of these is true:
+
+* [ ] Product is currently installed or deployed.
+* [ ] Company has an active customer relationship.
+* [ ] Company has an active contract, order, support agreement, or renewal.
+* [ ] Product has been accredited/approved in a relevant environment.
+* [ ] Company is positioned on a platform or program.
+* [ ] Company supplies through a prime or integrator.
+* [ ] Company has an established partner relationship that creates access.
+* [ ] Company has performed integration, testing, certification, or engineering that creates reusable technical knowledge.
+* [ ] Company has a recent past position that still provides customer, platform, architectural, or acquisition leverage.
+
+**Do not limit this to deals currently marked Open in HubSpot.**
+
+A Closed Won deal from several years ago may be a much better lily pad than a new pipeline opportunity.
+
+---
+
+## Phase 2 — Export HubSpot
+
+### Step 2 — Create a broad HubSpot export
+
+Start broad rather than trying to perfectly filter HubSpot.
+
+I would initially include:
+
+* [ ] Closed Won deals from roughly the last 3–5 years.
+* [ ] Current renewals/support contracts.
+* [ ] Current expansion/upsell opportunities associated with deployed customers.
+* [ ] Current active opportunities tied to existing customers.
+* [ ] Strategic deals that were lost but where significant customer/program relationships were developed.
+
+Export as Excel or CSV.
+
+Include as many of these fields as HubSpot contains:
+
+* Deal name
+* Customer/account/company
+* Deal stage
+* Amount
+* Close date
+* Deal owner
+* Product / SKU / product family
+* Government customer
+* End user
+* Prime/integrator
+* Program
+* Platform
+* Contract/vehicle
+* Site/location
+* Opportunity description
+* Notes
+* Renewal date
+* Associated contacts
+
+**Don't worry if many fields are absent.** That tells us what the QBRs and humans need to fill in.
+
+---
+
+## Phase 3 — Use Copilot to Turn HubSpot into Positions
+
+### Step 3 — Give the HubSpot export to Copilot
+
+Use a prompt approximately like this:
+
+**Copilot prompt — HubSpot current-position extraction**
+
+> Analyze this HubSpot deal export to identify potential existing company footholds that could serve as lily pads for adjacent defense business.
+>
+> A foothold is not simply a deal. It is an existing position created by a customer relationship, installed product, active contract, program/platform position, prime/integrator relationship, accreditation, integration, or prior delivery.
+>
+> Consolidate related deals where appropriate.
+>
+> Produce a table with:
+>
+> 1. Current Pad
+> 2. Customer / End User
+> 3. Customer Office / PMO if known
+> 4. Program / Platform
+> 5. Product / Capability
+> 6. Prime / Integrator / Partner
+> 7. Contract / Vehicle if known
+> 8. Evidence of Current Position
+> 9. Internal Deal Owner
+> 10. Most Recent Activity / Date
+> 11. Why This Position May Provide Future Leverage
+> 12. Missing Information
+>
+> Do not invent missing program names, platforms, customers, products, contracts, or relationships. Mark them UNKNOWN.
+>
+> Do not yet recommend new opportunities. This step is only to create an inventory of existing positions.
+
+That last instruction matters. **Inventory first; hypothesize second.**
+
+---
+
+## Phase 4 — Mine the Sales QBR Decks
+
+### Step 4 — Run each QBR through Copilot
+
+QBRs may actually be more useful than HubSpot because they often contain the organizational context that CRM records lack.
+
+Use:
+
+**Copilot prompt — QBR foothold extraction**
+
+> Review this Sales QBR specifically for evidence of existing company footholds that could support future business-development adjacency.
+>
+> Extract references to:
+>
+> * installed products
+> * current customers
+> * government end users
+> * programs
+> * platforms
+> * PMOs/customer offices
+> * primes and integrators
+> * partners
+> * active contracts
+> * renewals
+> * accreditations
+> * integrations
+> * tests/demonstrations
+> * follow-on activity
+> * customer-funded engineering or integration
+> * potential expansion discussed by the sales team
+>
+> Produce the same Current Pad table used for the HubSpot analysis.
+>
+> Distinguish:
+> **SOURCE FACT** — explicitly stated in the QBR
+> **ANALYTICAL INFERENCE** — reasonable implication
+> **UNKNOWN** — not supported by the QBR
+>
+> Do not invent missing information.
+
+Do this for several recent QBRs.
+
+You want historical context—not just the most recent quarter.
+
+---
+
+## Phase 5 — Reconcile HubSpot + QBR
+
+### Step 5 — Create one working Current Pad inventory
+
+I would make a temporary Excel workbook rather than immediately modifying the canonical terrain workbook.
+
+Call it something like:
+
+**Current_Business_LilyPad_Working.xlsx**
+
+Minimum columns:
+
+| Current Pad | Customer | Program/Platform | Product | Prime/Partner | Evidence | Internal Owner | Source |
+| ----------- | -------- | ---------------- | ------- | ------------- | -------- | -------------- | ------ |
+
+Then add:
+
+| Potential Adjacent Target | Why Pad Creates Leverage | Confidence | Missing Information |
+| ------------------------- | ------------------------ | ---------- | ------------------- |
+
+Have Copilot compare your HubSpot output and QBR output.
+
+Prompt:
+
+> Reconcile these two sources into one Current Pad inventory.
+>
+> Deduplicate records that appear to describe the same underlying customer/program/platform position.
+>
+> Preserve differences where you cannot determine they are the same.
+>
+> Prefer specific program/platform/customer positions over generic account names.
+>
+> Show which source supports each fact.
+>
+> Do not eliminate conflicting information; flag it for validation.
+
+---
+
+## Phase 6 — Human Validation
+
+### Step 6 — Review the inventory with the people who actually know the accounts
+
+This is critical.
+
+Copilot can organize evidence. It cannot know the internal truth that was never written down.
+
+For each promising pad, ask the account owner:
+
+* [ ] Are we actually installed there today?
+* [ ] What product/configuration?
+* [ ] Who is the actual end customer?
+* [ ] Which PMO/program/platform?
+* [ ] Are we direct or through a prime?
+* [ ] Who is the prime?
+* [ ] Who owns the customer relationship internally?
+* [ ] Is the deployment accredited?
+* [ ] Is this one site or a program-level position?
+* [ ] Is there another subsystem/site/platform already being discussed?
+* [ ] Is there customer-funded integration or engineering?
+* [ ] Who would we call tomorrow if we wanted to discuss expansion?
+
+This converts CRM data into **company-position intelligence**.
+
+---
+
+# Phase 7 — Match Current Pads Against the Terrain Map
+
+### Step 7 — Now bring in the v6.2 Terrain workbook
+
+Give Copilot:
+
+1. Your cleaned Current Pad inventory.
+2. `Defense_Tech_Opportunity_Intelligence_Terrain_Mapping_v6.2.xlsx`.
+
+Tell it:
+
+> Compare the Current Pad inventory against the Opportunities table in the terrain-mapping workbook.
+>
+> Look for credible adjacency based on:
+>
+> 1. Same program/platform
+> 2. Same PMO/customer organization
+> 3. Same prime/integrator
+> 4. Same mission architecture
+> 5. Same classification/trust boundary
+> 6. Same platform family
+> 7. Adjacent subsystem or site
+> 8. Existing accreditation/integration that may reduce insertion risk
+> 9. Existing product installation that could logically expand
+>
+> For every OpportunityID, classify the internal match as:
+>
+> * Confirmed Foothold
+> * Potential Match
+> * No Relevant Match
+> * Needs Internal Follow-up
+>
+> For matches, identify:
+>
+> * OpportunityID
+> * Current Pad
+> * Evidence supporting the pad
+> * Internal owner
+> * Reference program/platform
+> * Potential Target Pad
+> * Proposed Current Pad → Next Pad path
+> * Why the current position creates leverage
+> * What must still be validated
+>
+> Do not infer that customer similarity alone proves adjacency.
+> Do not assign a LilyPadScore yet.
+
+This is where the **outside-in terrain map intersects the inside-out installed base.**
+
+---
+
+# Phase 8 — Update the Canonical Workbook
+
+### Step 8 — Populate the existing fields in `Opportunities`
+
+For each reviewed terrain opportunity, update:
+
+* [ ] `InternalReviewStatus`
+* [ ] `InternalBDReference`
+* [ ] `InternalRelationshipOwner`
+* [ ] `InternalPositionNotes`
+* [ ] `CurrentFoothold (Validate Internally)`
+* [ ] `FootholdType`
+* [ ] `ReferenceProgram`
+
+If there is credible adjacency, also populate:
+
+* [ ] `PotentialTargetPad (Hypothesis)`
+* [ ] `PotentialLilyPadPath (Hypothesis)`
+
+**Leave `LilyPadScore` blank initially.**
+
+Unknown is not weak. It means you haven't validated it yet.
+
+---
+
+# Phase 9 — Run Lily-Pad-First Discovery
+
+There will almost certainly be valuable Current Pads that **do not match any existing terrain opportunity**.
+
+Those are important.
+
+For each strong Current Pad, ask:
+
+> **Where can I move from here?**
+
+Use the terrain methodology's structure:
+
+| Current Pad | Foothold Evidence / Owner | Adjacent Target Pad | Expansion Hypothesis | Funding / Acquisition Path | Stakeholders | Next Action |
+| ----------- | ------------------------- | ------------------- | -------------------- | -------------------------- | ------------ | ----------- |
+
+Examples of **target-pad categories**, not specific recommendations:
+
+* another subsystem on the same platform
+* another site in the same program
+* another classification boundary
+* sensor → C2 architecture
+* tactical → enterprise architecture
+* test → operational environment
+* CONUS → deployed environment
+* one service → joint architecture
+* current prime → another program controlled by that prime
+* current PMO → adjacent program within the portfolio
+
+This is the true **inside-out discovery process**.
+
+---
+
+# Phase 10 — Cull Aggressively
+
+### Step 10 — Select only the strongest expansion hypotheses
+
+A promising Current Pad should have **more than an account name**.
+
+Give preference to pads where several things overlap:
+
+* [ ] Existing product position
+* [ ] Specific program/platform
+* [ ] Known customer
+* [ ] Relationship owner
+* [ ] Known prime/integrator
+* [ ] Technical adjacency
+* [ ] Reusable accreditation/integration
+* [ ] Specific adjacent target
+* [ ] Potential buying/funding path
+
+A weak hypothesis:
+
+**“We sell to the Air Force → maybe Golden Dome.”**
+
+A much stronger hypothesis:
+
+**“We have Product X deployed with Program A through Prime Y; Program A shares architecture/customer/prime with adjacent subsystem B, which has an upcoming integration decision.”**
+
+The second one is a lily-pad hypothesis worth validating.
+
+---
+
+# Phase 11 — Validate Only the Best Few
+
+For the strongest candidates, run the normal eight validation lanes:
+
+1. Customer / Mission
+2. Funding / CRAD
+3. Architecture
+4. Current Company Position
+5. Engineering / Product
+6. Acquisition
+7. Competitive
+8. Timing
+
+Then decide:
+
+**Promote / Continue Validation / Monitor / Deprioritize / Kill**
+
+Only after enough evidence exists should you assign the LilyPadScore and eventual pursuit score.
+
+---
+
+# Phase 12 — Then Build Power BI
+
+Once perhaps **15–30 opportunities have actually been internally reviewed**, Power BI becomes valuable.
+
+Refresh the workbook and build the **Lily-Pad & Internal Position** page.
+
+Initially emphasize the table:
+
+**Opportunity → Current Pad → Target Pad → Path → Internal Owner**
+
+Only later, after real LilyPadScores accumulate, use the Evidence Score × LilyPadScore scatterplot.
+
+The goal is not a beautiful dashboard.
+
+The goal is to make the handful of consequential **Current Pad → Next Pad** moves obvious.
